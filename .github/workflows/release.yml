@@ -88,11 +88,13 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - uses: actions/checkout@v4
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           prerelease: true
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md
           files: |
             artifacts/**/*.deb
             artifacts/**/*.AppImage
