@@ -1,11 +1,9 @@
 # Rust
 /target/
 **/*.rs.bk
-Cargo.lock
 
 # Frontend
 frontend/node_modules/
-frontend/dist/
 
 # IDE
 .idea/
@@ -28,7 +26,9 @@ desktop.ini
 *.blg
 *.fdb_latexmk
 *.fls
+# LaTeX logs (not test fixtures)
 *.log
+!tests/fixtures/logs/*.log
 *.out
 *.synctex.gz
 *.toc

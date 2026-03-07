@@ -1,0 +1,10 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex)
+entering extended mode
+(./main.tex
+LaTeX Warning: Reference `fig:1' on page 1 undefined on input line 15.
+Package hyperref Warning: Token not allowed in a PDF string on input line 20.
+LaTeX Warning: There were undefined references.
+Overfull \hbox (3.45pt too wide) in paragraph at lines 10--15
+Underfull \vbox (badness 10000) has occurred while \output is active
+)
+Output written on main.pdf (3 pages, 45678 bytes).

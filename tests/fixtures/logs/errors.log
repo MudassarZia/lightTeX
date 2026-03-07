@@ -1,0 +1,16 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex)
+entering extended mode
+(./main.tex
+LaTeX2e <2023-11-01> patch level 1
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls)
+(./main.tex:10: ! Undefined control sequence.
+l.10 \badcommand
+
+./main.tex:25: ! Missing $ inserted.
+l.25 x^2
+
+! Extra alignment tab has been changed to \cr.
+LaTeX Warning: Reference `fig:missing' on page 1 undefined on input line 30.
+Overfull \hbox (15.0pt too wide) in paragraph at lines 20--22
+)
+No pages of output.
