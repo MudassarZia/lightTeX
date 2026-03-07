@@ -1,0 +1,29 @@
+{
+  "name": "lighttex-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "check": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@codemirror/lang-javascript": "^6.2.0",
+    "@codemirror/state": "^6.4.0",
+    "@codemirror/view": "^6.26.0",
+    "@codemirror/commands": "^6.5.0",
+    "@codemirror/search": "^6.5.0",
+    "@codemirror/language": "^6.10.0",
+    "@tauri-apps/api": "^2.0.0",
+    "codemirror": "^6.0.0",
+    "solid-js": "^1.9.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "typescript": "^5.5.0",
+    "vite": "^6.0.0",
+    "vite-plugin-solid": "^2.10.0"
+  }
+}

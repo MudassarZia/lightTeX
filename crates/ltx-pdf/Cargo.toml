@@ -1,0 +1,11 @@
+[package]
+name = "ltx-pdf"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "PDF rendering via MuPDF with page caching and Sioyek-style navigation"
+
+[dependencies]
+thiserror.workspace = true
+tracing.workspace = true
+serde.workspace = true

@@ -1,0 +1,12 @@
+[package]
+name = "ltx-vim"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Full modal editing state machine with vim emulation"
+
+[dependencies]
+ltx-core = { path = "../ltx-core" }
+thiserror.workspace = true
+tracing.workspace = true
+serde.workspace = true

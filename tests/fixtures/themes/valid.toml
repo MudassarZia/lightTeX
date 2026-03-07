@@ -1,0 +1,29 @@
+name = "Test Theme"
+kind = "dark"
+
+[colors]
+background = "#1a1a2e"
+foreground = "#e0e0e0"
+cursor = "#ffffff"
+selection = "#3a3a5e"
+line_highlight = "#2a2a4e"
+gutter = "#1a1a2e"
+gutter_foreground = "#666688"
+
+[syntax]
+command = "#7ec8e3"
+environment = "#c084fc"
+math = "#fbbf24"
+comment = "#6b7280"
+string = "#a78bfa"
+number = "#34d399"
+bracket = "#f97316"
+error = "#ef4444"
+
+[ui]
+statusbar_bg = "#3b82f6"
+statusbar_fg = "#ffffff"
+sidebar_bg = "#111827"
+sidebar_fg = "#d1d5db"
+panel_bg = "#1a1a2e"
+panel_border = "#374151"

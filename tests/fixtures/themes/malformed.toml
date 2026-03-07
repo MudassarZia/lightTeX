@@ -1,0 +1,6 @@
+name = "Broken Theme"
+kind = "dark"
+
+[colors
+background = "#1a1a2e"
+this is not valid toml {{{}}}

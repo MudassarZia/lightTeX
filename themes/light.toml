@@ -1,0 +1,29 @@
+name = "Light"
+kind = "light"
+
+[colors]
+background = "#ffffff"
+foreground = "#333333"
+cursor = "#000000"
+selection = "#add6ff"
+line_highlight = "#f5f5f5"
+gutter = "#ffffff"
+gutter_foreground = "#999999"
+
+[syntax]
+command = "#0000ff"
+environment = "#af00db"
+math = "#795e26"
+comment = "#008000"
+string = "#a31515"
+number = "#098658"
+bracket = "#0431fa"
+error = "#e51400"
+
+[ui]
+statusbar_bg = "#007acc"
+statusbar_fg = "#ffffff"
+sidebar_bg = "#f3f3f3"
+sidebar_fg = "#333333"
+panel_bg = "#ffffff"
+panel_border = "#e0e0e0"

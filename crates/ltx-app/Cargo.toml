@@ -1,0 +1,30 @@
+[package]
+name = "ltx-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Tauri entry point, IPC commands, and app state for lightTex"
+
+[lib]
+name = "ltx_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]
+ltx-core = { path = "../ltx-core" }
+ltx-syntax = { path = "../ltx-syntax" }
+ltx-compiler = { path = "../ltx-compiler" }
+ltx-pdf = { path = "../ltx-pdf" }
+ltx-theme = { path = "../ltx-theme" }
+tauri = { version = "2", features = [] }
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
