@@ -1,181 +1,218 @@
 # lightTex
 
-A fast, keyboard-first LaTeX editor built with Rust. Starts in milliseconds, compiles in the background, and stays out of your way.
+A fast, keyboard-first LaTeX editor built with C++ and Qt 6. Starts in milliseconds, compiles in the background, and stays out of your way.
 
-**Status:** v0.1.0-beta (MVP scaffold — editor + compiler pipeline working)
+**Status:** v0.1.0-beta (C++ Qt rewrite — editor + compiler pipeline + PDF preview working)
 
 ## Why lightTex?
 
 | | VS Code + LaTeX Workshop | Overleaf | TeXstudio | **lightTex** |
 |---|---|---|---|---|
-| **Installer size** | ~300MB | N/A (web) | ~150MB | **~13MB** |
-| **RAM at idle** | ~400MB | ~500MB (browser) | ~200MB | **~40MB** |
-| **Frontend bundle** | ~20MB (Electron) | N/A | N/A | **312KB** |
-| **Insert into 100KB doc** | ~1ms | N/A | ~1ms | **41µs** |
+| **Stack** | Electron + TS | Web | C++ / Qt5 | **C++20 / Qt 6** |
+| **RAM at idle** | ~400MB | ~500MB (browser) | ~200MB | **~50MB** |
 | **Offline** | Yes | No | Yes | **Yes** |
 | **Vim mode** | Plugin | No | No | **Planned (v0.3)** |
-| **Plugin system** | Extensions | No | No | **Planned (v0.4)** |
+| **Plugin system** | Extensions | No | No | **Planned (v0.4, Lua)** |
 | **License** | MIT | Proprietary | GPL-3.0 | **AGPL-3.0** |
 
 ## What works today (v0.1)
 
-- **Editor**: CodeMirror 6 with syntax-aware editing, bracket matching, search, undo/redo
-- **Syntax highlighting**: Tree-sitter incremental parsing for LaTeX
-- **Compilation**: pdfLaTeX/XeLaTeX/LuaLaTeX pipeline with structured error/warning parsing
-- **SyncTeX**: Forward search (source → PDF position)
-- **PDF preview**: Split pane (stub renderer — MuPDF integration next)
-- **Themes**: Dark + Light TOML themes with hot CSS variable mapping
-- **Status bar**: Line/col, compile status, engine selector
-
-## Performance
-
-Benchmarked on a standard desktop (see `crates/ltx-core/benches/`):
-
-| Operation | Time |
-|---|---|
-| Insert into 1KB document | **1.9µs** |
-| Insert into 100KB document | **41µs** |
-| Insert into 10MB document | **11ms** |
-| Delete range (100KB doc) | **43µs** |
-| 100× undo + 100× redo cycle | **343µs** |
-| Binary size (release, stripped) | **13MB** |
-| Frontend bundle | **312KB** |
+- **Editor**: QPlainTextEdit subclass with line numbers, bracket matching, current line highlight
+- **Syntax highlighting**: Tree-sitter incremental parsing for LaTeX via QSyntaxHighlighter bridge
+- **Compilation**: pdfLaTeX / XeLaTeX / LuaLaTeX pipeline via QProcess with structured error/warning/badbox parsing
+- **PDF preview**: Split pane with Poppler-Qt6 or Qt6::Pdf rendering (stub fallback if neither installed)
+- **SyncTeX**: Forward/inverse output parsing (UI wiring in v0.2)
+- **Themes**: Dark + Light TOML themes applied via Qt stylesheets
+- **Status bar**: Line/col, compile status (color-coded), engine name, encoding
+- **Command palette**: Ctrl+Shift+P overlay with fuzzy filtering and keyboard navigation
+- **File I/O**: Native file dialogs (QFileDialog), LF/CRLF detection + normalization
+- **Undo/redo**: Full history with transaction support
 
 ## Quick start
 
 ### Prerequisites
 
-- [Rust](https://rustup.rs/) (stable)
-- [Node.js](https://nodejs.org/) (v20+)
-- A LaTeX distribution ([TeX Live](https://www.tug.org/texlive/), [MiKTeX](https://miktex.org/), etc.) for compilation
+- **C++20 compiler**: MSVC 2022, GCC 12+, or Clang 15+
+- **CMake** 3.21+
+- **Qt 6.6+**: Install via your system package manager, Qt Online Installer, or vcpkg
+- **A LaTeX distribution**: [TeX Live](https://www.tug.org/texlive/), [MiKTeX](https://miktex.org/), etc. for compilation
 
-### Run in development mode
-
-```bash
-# Install frontend dependencies
-cd frontend && npm install && cd ..
-
-# Run with hot-reload
-cargo tauri dev
-```
-
-### Build for release
+### Build and run
 
 ```bash
-cargo tauri build
-```
+# Configure (downloads tree-sitter, googletest, toml++ automatically via FetchContent)
+cmake -B build
 
-The binary appears in `target/release/`. Platform installers (.msi, .dmg, .deb, .AppImage) go to `target/release/bundle/`.
+# Build
+cmake --build build --config Release
+
+# Run
+./build/lightTex                    # Linux/macOS
+.\build\Release\lightTex.exe       # Windows
+
+# Open a file directly
+./build/lightTex path/to/file.tex
+```
 
 ### Run tests
 
 ```bash
-cargo fmt --check
-cargo clippy --workspace -- -D warnings
-cargo test --workspace
-cd frontend && npm run check
+cmake -B build -DLIGHTTEX_BUILD_TESTS=ON
+cmake --build build --config Release
+ctest --test-dir build --output-on-failure -C Release
 ```
+
+On headless CI, set `QT_QPA_PLATFORM=offscreen` for widget tests.
 
 ### Run benchmarks
 
 ```bash
-cargo bench --bench rope_bench
+cmake -B build -DLIGHTTEX_BUILD_BENCHMARKS=ON
+cmake --build build --config Release
+./build/benchmarks/bench_piecetable
+```
+
+### Install dependencies by platform
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install qt6-base-dev libgl1-mesa-dev
+# Optional for PDF rendering:
+sudo apt-get install libpoppler-qt6-dev
+```
+
+**macOS:**
+```bash
+brew install qt@6
+# Optional: brew install poppler
+```
+
+**Windows:**
+Use the [Qt Online Installer](https://www.qt.io/download-qt-installer) or vcpkg:
+```bash
+vcpkg install qt6-base tomlplusplus
 ```
 
 ## Architecture
 
 ```
 lightTex/
-├── crates/
-│   ├── ltx-core/        # Rope buffer, selections, undo/redo, document model
-│   ├── ltx-syntax/      # Tree-sitter LaTeX highlighting
-│   ├── ltx-compiler/    # Compilation pipeline, log parser, SyncTeX
-│   ├── ltx-pdf/         # PDF renderer (MuPDF planned), page cache
-│   ├── ltx-theme/       # TOML theme parser, built-in themes
-│   ├── ltx-app/         # Tauri v2 entry point, IPC commands
-│   ├── ltx-lsp/         # texlab LSP client (v0.2)
-│   ├── ltx-vim/         # Modal editing (v0.3)
-│   ├── ltx-plugin/      # WASM + Lua plugins (v0.4)
-│   ├── ltx-i18n/        # Internationalization (v0.3)
-│   ├── ltx-snippets/    # Snippet engine (v0.2)
-│   └── ltx-shortcuts/   # Keybinding registry (v0.2)
-├── frontend/            # SolidJS + CodeMirror 6
-└── themes/              # dark.toml, light.toml
+├── CMakeLists.txt                 # Top-level CMake
+├── vcpkg.json                     # vcpkg manifest
+├── cmake/                         # CMake modules (compiler flags, FetchContent)
+├── src/
+│   ├── main.cpp                   # QApplication entry point
+│   ├── core/                      # PieceTable buffer, Selection, History, Document
+│   ├── syntax/                    # tree-sitter LaTeX highlighting + QSyntaxHighlighter
+│   ├── compiler/                  # QProcess compilation, log parser, SyncTeX
+│   ├── pdf/                       # Poppler-Qt6 renderer, LRU page cache, PdfWidget
+│   ├── theme/                     # TOML theme parser (toml++), ThemeManager
+│   ├── editor/                    # EditorWidget (QPlainTextEdit), line numbers, brackets
+│   ├── ui/                        # MainWindow, StatusBar, CommandPalette, CompilePanel
+│   ├── app/                       # AppState, Actions (QAction registry)
+│   └── {lsp,vim,plugin,...}/      # Stubs for future versions
+├── themes/                        # dark.toml, light.toml
+├── tests/                         # 95 tests (Google Test + QTest)
+├── benchmarks/                    # Google Benchmark for piece table
+└── .github/workflows/             # CI + Release pipelines
 ```
 
 **Key design decisions:**
-- **Rope buffer** (ropey): O(log n) edits — microsecond operations on GB files
+- **Piece table buffer**: O(log n) edits — the same approach VS Code uses internally
 - **Tree-sitter**: Incremental reparsing — sub-ms re-highlights after edits
-- **Tauri v2**: Native webview, ~40MB RAM, no Electron overhead
-- **EditorSurface abstraction**: CodeMirror 6 now, custom canvas renderer later (no backend changes needed)
+- **Qt 6 Widgets**: Native look, no web runtime, ~50MB RAM at idle
+- **QProcess**: Async compilation via Qt's event loop — no external async runtime needed
+- **PDF rendering**: Poppler-Qt6 or Qt6::Pdf (native Qt), with stub fallback
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| Ctrl+O | Open file |
+| Ctrl+S | Save file |
+| Ctrl+Enter | Compile document |
+| Ctrl+Shift+P | Command palette |
+| Ctrl+Z / Ctrl+Y | Undo / Redo |
+
+## Test suite
+
+95 tests covering all modules:
+
+| Test file | Tests | Module |
+|---|---|---|
+| test_piecetable | 18 | Piece table insert/delete/replace/lines/unicode |
+| test_selection | 7 | Cursor, range, contains, overlaps, normalize, clip |
+| test_history | 5 | Undo/redo stacks, clear |
+| test_document | 5 | File I/O, line ending detection, save roundtrip |
+| test_highlighter | 17 | Tree-sitter parse, reparse, node classification, error handling |
+| test_logparser | 8 | Error/warning/badbox regex, fixture files |
+| test_synctex | 5 | Forward/inverse output parsing |
+| test_pagecache | 5 | LRU eviction, access refresh |
+| test_pdfrenderer | 6 | Renderer lifecycle, error handling, invalid files |
+| test_theme | 8 | TOML parsing, stylesheet generation, dark/light themes |
+| test_commandpalette | 5 | Show/hide/toggle, theme switching (widget test) |
+| test_editorwidget | 7 | Creation, text, cursor, theme switching (widget test) |
 
 ## Roadmap
 
 ### v0.2 — "Actually Usable"
-- [ ] texlab LSP: completions, hover, goto-def, diagnostics
-- [ ] Multi-engine auto-compile on save
-- [ ] SyncTeX inverse search (PDF → editor)
-- [ ] File tree sidebar, document outline, command palette
-- [ ] Built-in LaTeX snippets
-- [ ] Find & replace (regex)
-- [ ] Configurable keybindings (TOML)
-- [ ] Error/warning panel
+- [ ] texlab LSP via QProcess + JSON-RPC (completions, hover, goto-def)
+- [ ] Auto-compile on save (QFileSystemWatcher)
+- [ ] File tree sidebar (QTreeView + QFileSystemModel)
+- [ ] Built-in LaTeX snippets (TOML-defined, tab-trigger)
+- [ ] Find/replace with regex
+- [ ] Configurable keybindings (TOML -> QKeySequence)
+- [ ] Error/warning panel with click-to-jump
 
 ### v0.3 — "Power User"
-- [ ] Full vim emulation (modes, operators, motions, registers, macros, marks)
-- [ ] LaTeX-specific text objects (`i$`, `ae`, `ic`)
-- [ ] Sioyek-style PDF: keyboard nav, smart jump, marks, text search
+- [ ] Vim mode — C++ state machine (Normal/Insert/Visual/Command/Search)
+- [ ] LaTeX text objects: `i$`/`a$`, `ie`/`ae`, `ic`/`ac`
+- [ ] Registers, macros, marks, `.` repeat, ex-commands
+- [ ] SyncTeX wired to UI (click PDF -> jump to editor, and vice versa)
 - [ ] Multi-file projects (\input/\include tracking)
 - [ ] BibTeX integration + citation completion
-- [ ] Inline math preview (KaTeX)
-- [ ] Internationalization (English + 3 languages)
+- [ ] i18n via QTranslator
 
 ### v0.4 — "Extensible"
-- [ ] WASM plugin host (Extism) + Lua scripting (mlua)
-- [ ] Plugin API with manifest format
-- [ ] Visual table editor
-- [ ] Git integration (status, diff, commit)
-- [ ] Find in project (multi-file search)
-- [ ] Embedded terminal
-- [ ] Multiple tabs/windows, session persistence
+- [ ] Lua plugin system (Sol2 + LuaJIT)
+- [ ] Plugin API: buffer ops, UI, commands, keybindings, filesystem
+- [ ] `vim` namespace mimics `vim.api.*` for Neovim plugin portability
+- [ ] Visual table editor, git integration
+- [ ] Multiple tabs (QTabWidget), session persistence
 
 ### v0.5 — "AI & Polish"
-- [ ] AI plugin: Ollama (local) + cloud APIs
-- [ ] LaTeX error explanation, smart completions
+- [ ] AI plugin (Lua, wrapping Ollama/cloud APIs)
 - [ ] Performance optimization pass
-- [ ] Accessibility audit, auto-updater
+- [ ] Accessibility (Qt Accessibility framework)
+- [ ] Auto-updater
 
 ### v1.0 — "Release"
-- [ ] >70% test coverage, performance benchmarks vs competitors
-- [ ] Windows .msi, macOS .dmg, Linux .deb + .AppImage
+- [ ] >70% test coverage, benchmarks published
+- [ ] Platform installers (.msi, .dmg, .deb, .AppImage)
 - [ ] Homebrew, Scoop, Flathub distribution
-- [ ] User guide + plugin developer guide
-
-### Post-v1.0
-- [ ] Real-time collaboration (Loro CRDT + P2P)
-- [ ] Custom canvas-based editor renderer (replace CodeMirror 6)
-- [ ] Mobile support (Tauri v2 mobile)
+- [ ] User guide + Lua plugin developer guide
 
 ## Tech stack
 
 | Layer | Technology |
 |---|---|
-| Core | Rust |
-| App framework | Tauri v2 |
-| Frontend | SolidJS + TypeScript |
-| Text editor | CodeMirror 6 |
-| Text buffer | ropey |
-| Syntax | tree-sitter + tree-sitter-latex |
-| LaTeX intelligence | texlab (LSP) — planned |
-| PDF rendering | MuPDF (mupdf-rs) — planned |
+| Language | C++20 |
+| GUI | Qt 6 Widgets |
+| Text buffer | Piece table (custom) |
+| Syntax | tree-sitter (C API) |
+| PDF rendering | Poppler-Qt6 or Qt6::Pdf |
+| TOML parsing | toml++ |
+| Compilation | QProcess |
 | Source-PDF sync | SyncTeX |
-| Plugins | Extism (WASM) + mlua (Lua) — planned |
-| Theming | TOML files |
+| Testing | Google Test + QTest |
+| Build | CMake |
+| Future: Plugins | Sol2 + LuaJIT (v0.4) |
+| Future: LSP | texlab via JSON-RPC (v0.2) |
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) (coming soon).
+Contributions welcome. Please run `clang-format` before submitting PRs.
 
 ## License
 
-[AGPL-3.0](LICENSE) — enables direct MuPDF usage for PDF rendering.
+[AGPL-3.0](LICENSE) — enables direct Poppler and MuPDF usage for PDF rendering.
