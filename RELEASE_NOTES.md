@@ -1,6 +1,6 @@
-## lightTex v0.1.0-beta — "Hello, LaTeX"
+## lightTex v0.1.0-beta.2 — "Hello, LaTeX (C++ Rewrite)"
 
-First release. A fast, keyboard-first LaTeX editor built with C++20 and Qt 6.
+Complete rewrite from Rust/Tauri/SolidJS to C++20/Qt 6. The Rust GUI ecosystem (Tauri + web frontend) wasn't mature enough for a native desktop editor — render latency, platform-native widget gaps, and PDF integration friction made it clear that Qt was the right tool for this job. C++ with Qt 6 Widgets gives us sub-50MB RAM usage, native look and feel, and direct access to Poppler/QPdfDocument for PDF rendering without web bridges.
 
 ### What works
 

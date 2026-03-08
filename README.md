@@ -2,7 +2,7 @@
 
 A fast, keyboard-first LaTeX editor built with C++ and Qt 6. Starts in milliseconds, compiles in the background, and stays out of your way.
 
-**Status:** v0.1.0-beta (C++ Qt rewrite — editor + compiler pipeline + PDF preview working)
+**Status:** v0.1.0-beta.2 (C++ Qt rewrite — editor + compiler pipeline + PDF preview working)
 
 ## Why lightTex?
 
