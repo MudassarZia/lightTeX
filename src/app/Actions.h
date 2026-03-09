@@ -25,6 +25,10 @@ private:
     void switchThemeDark();
     void switchThemeLight();
     void toggleCommandPalette();
+    void toggleAutoCompile();
+    void toggleFileTree();
+    void showFind();
+    void showFindReplace();
     void setupCommandPalette();
 
     AppState* state_;
@@ -36,6 +40,9 @@ private:
     QAction* themeDarkAction_;
     QAction* themeLightAction_;
     QAction* paletteAction_;
+    QAction* findAction_;
+    QAction* findReplaceAction_;
+    QAction* toggleFileTreeAction_;
 };
 
 } // namespace lighttex::app

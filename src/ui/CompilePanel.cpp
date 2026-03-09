@@ -1,5 +1,9 @@
 #include "ui/CompilePanel.h"
 
+#include <QMouseEvent>
+#include <QTextBlock>
+#include <QTextCursor>
+
 namespace lighttex::ui {
 
 CompilePanel::CompilePanel(QWidget* parent) : QPlainTextEdit(parent) {
@@ -13,6 +17,9 @@ CompilePanel::CompilePanel(QWidget* parent) : QPlainTextEdit(parent) {
     setStyleSheet(
         "QPlainTextEdit { background: #1e1e1e; color: #d4d4d4; "
         "border-top: 1px solid #3c3c3c; }");
+
+    // Make clickable
+    setCursor(Qt::PointingHandCursor);
 }
 
 void CompilePanel::setTheme(const lighttex::theme::Theme& theme) {
@@ -28,30 +35,41 @@ void CompilePanel::setTheme(const lighttex::theme::Theme& theme) {
 void CompilePanel::setMessages(
     const std::vector<lighttex::compiler::CompileMessage>& messages) {
     clear();
-    QString text;
+    messages_ = messages;
 
-    for (const auto& msg : messages) {
+    QTextCursor cursor(document());
+    cursor.beginEditBlock();
+
+    for (size_t i = 0; i < messages.size(); ++i) {
+        const auto& msg = messages[i];
         QString prefix;
-        QString color;
+        QColor color;
 
         switch (msg.kind) {
             case lighttex::compiler::MessageKind::Error:
                 prefix = "ERROR";
-                color = "#f44747";
+                color = QColor("#f44747");
                 break;
             case lighttex::compiler::MessageKind::Warning:
                 prefix = "WARN";
-                color = "#dcdcaa";
+                color = QColor("#dcdcaa");
                 break;
             case lighttex::compiler::MessageKind::BadBox:
                 prefix = "BADBOX";
-                color = "#d4d4d4";
+                color = QColor("#d4d4d4");
                 break;
             case lighttex::compiler::MessageKind::Info:
                 prefix = "INFO";
-                color = "#569cd6";
+                color = QColor("#569cd6");
                 break;
         }
+
+        if (i > 0) {
+            cursor.insertText("\n");
+        }
+
+        QTextCharFormat fmt;
+        fmt.setForeground(color);
 
         QString line = QString("[%1]").arg(prefix);
         if (msg.file) {
@@ -61,10 +79,11 @@ void CompilePanel::setMessages(
             line += ":" + QString::number(*msg.line);
         }
         line += " " + QString::fromStdString(msg.message);
-        text += line + "\n";
+
+        cursor.insertText(line, fmt);
     }
 
-    setPlainText(text);
+    cursor.endEditBlock();
 
     if (!messages.empty()) {
         show();
@@ -73,6 +92,7 @@ void CompilePanel::setMessages(
 
 void CompilePanel::setLogOutput(const std::string& log) {
     setPlainText(QString::fromStdString(log));
+    messages_.clear();
     if (!log.empty()) {
         show();
     }
@@ -80,7 +100,19 @@ void CompilePanel::setLogOutput(const std::string& log) {
 
 void CompilePanel::clearMessages() {
     clear();
+    messages_.clear();
     hide();
+}
+
+void CompilePanel::mousePressEvent(QMouseEvent* event) {
+    QPlainTextEdit::mousePressEvent(event);
+
+    QTextCursor cursor = cursorForPosition(event->pos());
+    int lineNum = cursor.blockNumber();
+
+    if (lineNum >= 0 && lineNum < static_cast<int>(messages_.size())) {
+        emit messageClicked(messages_[static_cast<size_t>(lineNum)]);
+    }
 }
 
 } // namespace lighttex::ui

@@ -6,97 +6,89 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-
-      - name: Install system dependencies
+      - name: Check C++ formatting
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          find src tests -name '*.cpp' -o -name '*.h' | xargs clang-format --dry-run -Werror
 
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
-
-      - run: cargo fmt --check
-      - run: cargo clippy --workspace -- -D warnings
-
-  test-rust:
-    name: Test Rust (${{ matrix.os }})
+  test:
+    name: Test (${{ matrix.os }})
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
 
-      - name: Install system dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install Qt (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y qt6-base-dev libgl1-mesa-dev
 
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
+      - name: Install Qt (macOS)
+        if: runner.os == 'macOS'
+        run: brew install qt@6
 
-      - name: Run tests
-        run: cargo test --workspace --all-features
-
-  test-frontend:
-    name: Test Frontend
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Install Qt (Windows)
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v4
         with:
-          node-version: "22"
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-      - name: Type check
-        working-directory: frontend
-        run: npm run check
+          version: '6.7.*'
+
+      - name: Configure
+        run: cmake -B build -DLIGHTTEX_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C Release
+        env:
+          QT_QPA_PLATFORM: offscreen
 
   build-smoke:
     name: Build (${{ matrix.os }})
-    needs: [lint, test-rust, test-frontend]
+    needs: [lint, test]
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
 
-      - name: Install system dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install Qt (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y qt6-base-dev libgl1-mesa-dev
 
-      - name: Install Tauri CLI
-        uses: cargo-bins/cargo-binstall@main
-      - run: cargo binstall tauri-cli@^2 --no-confirm
+      - name: Install Qt (macOS)
+        if: runner.os == 'macOS'
+        run: brew install qt@6
 
-      - name: Install frontend deps
-        working-directory: frontend
-        run: npm ci
+      - name: Install Qt (Windows)
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
 
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DLIGHTTEX_BUILD_TESTS=OFF
 
-      - name: Build
-        run: cargo tauri build --no-bundle
+      - name: Build Release
+        run: cmake --build build --config Release
+
+      - name: Verify binary exists
+        shell: bash
+        run: |
+          if [ -f build/lightTex ] || [ -f build/Release/lightTex.exe ] || [ -f build/lightTex.exe ]; then
+            echo "Binary found"
+          else
+            echo "Binary not found" && exit 1
+          fi

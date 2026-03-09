@@ -1,9 +1,5 @@
-# Rust
-/target/
-**/*.rs.bk
-
-# Frontend
-frontend/node_modules/
+# Build
+/build/
 
 # IDE
 .idea/
@@ -16,9 +12,6 @@ frontend/node_modules/
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# Tauri
-/crates/ltx-app/WixTools/
 
 # LaTeX build artifacts
 *.aux
@@ -42,3 +35,6 @@ desktop.ini
 .env
 .env.local
 .claude/
+
+# Debug logs
+completion_debug.log

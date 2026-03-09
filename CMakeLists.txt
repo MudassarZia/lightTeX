@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(lightTex VERSION 0.1.0 LANGUAGES C CXX)
+project(lightTex VERSION 0.2.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -73,11 +73,21 @@ set(LIGHTTEX_SOURCES
     src/editor/EditorWidget.cpp
     src/editor/LineNumberArea.cpp
     src/editor/BracketMatcher.cpp
+    src/editor/FindReplaceBar.cpp
     # ui
     src/ui/MainWindow.cpp
     src/ui/StatusBar.cpp
     src/ui/CommandPalette.cpp
     src/ui/CompilePanel.cpp
+    src/ui/FileTreeWidget.cpp
+    # shortcuts
+    src/shortcuts/Shortcuts.cpp
+    # snippets
+    src/snippets/Snippets.cpp
+    src/snippets/SnippetSession.cpp
+    # lsp
+    src/lsp/LspClient.cpp
+    src/lsp/CompletionWidget.cpp
     # app
     src/app/AppState.cpp
     src/app/Actions.cpp
@@ -110,11 +120,23 @@ set(LIGHTTEX_HEADERS
     src/editor/EditorWidget.h
     src/editor/LineNumberArea.h
     src/editor/BracketMatcher.h
+    src/editor/FindReplaceBar.h
     # ui
     src/ui/MainWindow.h
     src/ui/StatusBar.h
     src/ui/CommandPalette.h
     src/ui/CompilePanel.h
+    src/ui/FileTreeWidget.h
+    # shortcuts
+    src/shortcuts/Shortcuts.h
+    # snippets
+    src/snippets/Snippets.h
+    src/snippets/SnippetSession.h
+    # lsp
+    src/lsp/Lsp.h
+    src/lsp/JsonRpc.h
+    src/lsp/LspTypes.h
+    src/lsp/CompletionWidget.h
     # app
     src/app/AppState.h
     src/app/Actions.h
@@ -171,3 +193,4 @@ endif()
 # Install
 install(TARGETS lightTex RUNTIME DESTINATION bin)
 install(DIRECTORY themes/ DESTINATION share/lighttex/themes)
+install(DIRECTORY snippets/ DESTINATION share/lighttex/snippets)

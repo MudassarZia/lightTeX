@@ -1,0 +1,10 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/themes">
+        <file alias="dark.toml">../themes/dark.toml</file>
+        <file alias="light.toml">../themes/light.toml</file>
+    </qresource>
+    <qresource prefix="/snippets">
+        <file alias="latex.toml">../snippets/latex.toml</file>
+    </qresource>
+</RCC>

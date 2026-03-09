@@ -43,6 +43,42 @@ std::vector<int> BracketMatcher::findMatchingBrackets(const QString& text, int c
     return {};
 }
 
+std::vector<int> BracketMatcher::findMatchingBrackets(const QTextDocument* doc, int cursorPos) const {
+    if (!doc) return {};
+    int len = doc->characterCount();
+    if (cursorPos < 0 || cursorPos >= len) return {};
+
+    QChar ch = doc->characterAt(cursorPos);
+
+    for (int i = 0; i < bracketCount; ++i) {
+        if (ch == openBrackets[i]) {
+            int match = findMatchingForward(doc, cursorPos, openBrackets[i], closeBrackets[i]);
+            if (match >= 0) return {cursorPos, match};
+            return {};
+        }
+    }
+
+    for (int i = 0; i < bracketCount; ++i) {
+        if (ch == closeBrackets[i]) {
+            int match = findMatchingBackward(doc, cursorPos, openBrackets[i], closeBrackets[i]);
+            if (match >= 0) return {match, cursorPos};
+            return {};
+        }
+    }
+
+    if (cursorPos > 0) {
+        QChar prev = doc->characterAt(cursorPos - 1);
+        for (int i = 0; i < bracketCount; ++i) {
+            if (prev == closeBrackets[i]) {
+                int match = findMatchingBackward(doc, cursorPos - 1, openBrackets[i], closeBrackets[i]);
+                if (match >= 0) return {match, cursorPos - 1};
+            }
+        }
+    }
+
+    return {};
+}
+
 int BracketMatcher::findMatchingForward(const QString& text, int pos,
                                          QChar open, QChar close) const {
     int depth = 0;
@@ -62,6 +98,35 @@ int BracketMatcher::findMatchingBackward(const QString& text, int pos,
     for (int i = pos; i >= 0; --i) {
         if (text[i] == close) ++depth;
         else if (text[i] == open) {
+            --depth;
+            if (depth == 0) return i;
+        }
+    }
+    return -1;
+}
+
+int BracketMatcher::findMatchingForward(const QTextDocument* doc, int pos,
+                                         QChar open, QChar close) const {
+    int depth = 0;
+    int len = doc->characterCount();
+    for (int i = pos; i < len; ++i) {
+        QChar ch = doc->characterAt(i);
+        if (ch == open) ++depth;
+        else if (ch == close) {
+            --depth;
+            if (depth == 0) return i;
+        }
+    }
+    return -1;
+}
+
+int BracketMatcher::findMatchingBackward(const QTextDocument* doc, int pos,
+                                          QChar open, QChar close) const {
+    int depth = 0;
+    for (int i = pos; i >= 0; --i) {
+        QChar ch = doc->characterAt(i);
+        if (ch == close) ++depth;
+        else if (ch == open) {
             --depth;
             if (depth == 0) return i;
         }

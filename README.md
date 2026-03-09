@@ -2,7 +2,7 @@
 
 A fast, keyboard-first LaTeX editor built with C++ and Qt 6. Starts in milliseconds, compiles in the background, and stays out of your way.
 
-**Status:** v0.1.0-beta.2 (C++ Qt rewrite — editor + compiler pipeline + PDF preview working)
+**Status:** v0.2.0-beta (configurable keybindings, find/replace, file tree, snippets, LSP autocomplete, auto-compile)
 
 ## Why lightTex?
 
@@ -15,18 +15,24 @@ A fast, keyboard-first LaTeX editor built with C++ and Qt 6. Starts in milliseco
 | **Plugin system** | Extensions | No | No | **Planned (v0.4, Lua)** |
 | **License** | MIT | Proprietary | GPL-3.0 | **AGPL-3.0** |
 
-## What works today (v0.1)
+## What works today (v0.2)
 
-- **Editor**: QPlainTextEdit subclass with line numbers, bracket matching, current line highlight
-- **Syntax highlighting**: Tree-sitter incremental parsing for LaTeX via QSyntaxHighlighter bridge
-- **Compilation**: pdfLaTeX / XeLaTeX / LuaLaTeX pipeline via QProcess with structured error/warning/badbox parsing
-- **PDF preview**: Split pane with Poppler-Qt6 or Qt6::Pdf rendering (stub fallback if neither installed)
-- **SyncTeX**: Forward/inverse output parsing (UI wiring in v0.2)
-- **Themes**: Dark + Light TOML themes applied via Qt stylesheets
-- **Status bar**: Line/col, compile status (color-coded), engine name, encoding
-- **Command palette**: Ctrl+Shift+P overlay with fuzzy filtering and keyboard navigation
-- **File I/O**: Native file dialogs (QFileDialog), LF/CRLF detection + normalization
+- **Editor**: Line numbers, bracket matching, current line highlight
+- **Syntax highlighting**: Tree-sitter incremental parsing with sorted event cache + binary search
+- **Compilation**: pdfLaTeX / XeLaTeX / LuaLaTeX via QProcess with error/warning/badbox parsing
+- **PDF preview**: Split pane with Poppler-Qt6 or Qt6::Pdf (stub fallback)
+- **Find/Replace**: Ctrl+F/Ctrl+H with regex support, match highlighting, replace all
+- **File tree sidebar**: Ctrl+B toggle, filtered to LaTeX-relevant files, auto-detects project root
+- **Configurable keybindings**: TOML-based (`keybindings.toml`), 8 defaults
+- **Command palette**: Ctrl+Shift+P with fuzzy subsequence matching
+- **Error panel**: Click-to-jump to error line in editor
+- **Auto-compile**: Toggle via command palette, compiles on save
+- **LaTeX snippets**: 18 built-in snippets with tabstop support (`\begin`, `\frac`, `\fig`, etc.)
+- **texlab LSP**: Autocomplete (commands + arguments), hover, go-to-definition, diagnostics (requires texlab on PATH)
+- **Themes**: Dark + Light TOML themes
+- **Status bar**: Cursor position, compile status, engine, auto-compile indicator, LSP status
 - **Undo/redo**: Full history with transaction support
+- **174 tests** across 20 test suites, all passing
 
 ## Quick start
 
@@ -35,7 +41,8 @@ A fast, keyboard-first LaTeX editor built with C++ and Qt 6. Starts in milliseco
 - **C++20 compiler**: MSVC 2022, GCC 12+, or Clang 15+
 - **CMake** 3.21+
 - **Qt 6.6+**: Install via your system package manager, Qt Online Installer, or vcpkg
-- **A LaTeX distribution**: [TeX Live](https://www.tug.org/texlive/), [MiKTeX](https://miktex.org/), etc. for compilation
+- **A LaTeX distribution**: [TeX Live](https://www.tug.org/texlive/) or [MiKTeX](https://miktex.org/) for compilation
+- **texlab** (optional): For LSP features — [download from GitHub releases](https://github.com/latex-lsp/texlab/releases)
 
 ### Build and run
 
@@ -93,6 +100,20 @@ Use the [Qt Online Installer](https://www.qt.io/download-qt-installer) or vcpkg:
 vcpkg install qt6-base tomlplusplus
 ```
 
+### Installing texlab (optional, for LSP)
+
+texlab provides autocomplete, hover info, and go-to-definition for LaTeX.
+
+**Download binary** (recommended): grab `texlab-x86_64-windows.zip` (or your platform) from [texlab releases](https://github.com/latex-lsp/texlab/releases), extract, and add to PATH.
+
+**Scoop (Windows):** `scoop install texlab`
+
+**Cargo (any platform):** `cargo install --git https://github.com/latex-lsp/texlab`
+
+**Homebrew (macOS):** `brew install texlab`
+
+lightTex detects texlab automatically. If not found, the status bar shows "texlab: not found" — everything else still works.
+
 ## Architecture
 
 ```
@@ -107,12 +128,16 @@ lightTex/
 │   ├── compiler/                  # QProcess compilation, log parser, SyncTeX
 │   ├── pdf/                       # Poppler-Qt6 renderer, LRU page cache, PdfWidget
 │   ├── theme/                     # TOML theme parser (toml++), ThemeManager
-│   ├── editor/                    # EditorWidget (QPlainTextEdit), line numbers, brackets
-│   ├── ui/                        # MainWindow, StatusBar, CommandPalette, CompilePanel
+│   ├── editor/                    # EditorWidget, line numbers, brackets, FindReplaceBar
+│   ├── ui/                        # MainWindow, StatusBar, CommandPalette, CompilePanel, FileTree
+│   ├── shortcuts/                 # ShortcutManager (TOML keybindings)
+│   ├── snippets/                  # SnippetManager, SnippetSession (tabstop cycling)
+│   ├── lsp/                       # LspClient (texlab), JsonRpc, LspTypes, CompletionWidget
 │   ├── app/                       # AppState, Actions (QAction registry)
-│   └── {lsp,vim,plugin,...}/      # Stubs for future versions
+│   └── {vim,plugin,i18n}/         # Stubs for future versions
 ├── themes/                        # dark.toml, light.toml
-├── tests/                         # 95 tests (Google Test + QTest)
+├── snippets/                      # latex.toml (18 default snippets)
+├── tests/                         # 150 tests (Google Test + QTest)
 ├── benchmarks/                    # Google Benchmark for piece table
 └── .github/workflows/             # CI + Release pipelines
 ```
@@ -132,11 +157,17 @@ lightTex/
 | Ctrl+S | Save file |
 | Ctrl+Enter | Compile document |
 | Ctrl+Shift+P | Command palette |
+| Ctrl+F | Find |
+| Ctrl+H | Find and replace |
+| Ctrl+B | Toggle file tree sidebar |
+| F12 | Go to definition (LSP) |
 | Ctrl+Z / Ctrl+Y | Undo / Redo |
+
+All shortcuts are configurable via `keybindings.toml` (see `%APPDATA%/lighttex/keybindings.toml` on Windows, `~/.config/lighttex/keybindings.toml` on Linux/Mac).
 
 ## Test suite
 
-95 tests covering all modules:
+174 tests covering all modules:
 
 | Test file | Tests | Module |
 |---|---|---|
@@ -150,25 +181,35 @@ lightTex/
 | test_pagecache | 5 | LRU eviction, access refresh |
 | test_pdfrenderer | 6 | Renderer lifecycle, error handling, invalid files |
 | test_theme | 8 | TOML parsing, stylesheet generation, dark/light themes |
-| test_commandpalette | 5 | Show/hide/toggle, theme switching (widget test) |
-| test_editorwidget | 7 | Creation, text, cursor, theme switching (widget test) |
+| test_commandpalette | 5 | Show/hide/toggle, fuzzy matching, theme switching |
+| test_editorwidget | 7 | Creation, text, cursor, theme switching |
+| test_shortcuts | 8 | Default bindings, override, TOML loading |
+| test_compilepanel | 4 | Messages, click-to-jump signal, show/hide |
+| test_findreplace | 10 | Search highlights, bracket matcher, theme |
+| test_filetree | 5 | Root path, theme, signal, header hidden |
+| test_snippets | 15 | Snippet manager, expansion, tabstop session |
+| test_jsonrpc | 5 | Encode/decode, Content-Length framing, partial data |
+| test_lsptypes | 5 | Position, Range, CompletionItem, Hover, Diagnostic |
+| test_completionwidget | 24 | LSP completion popup, triggers, signals, fromJson |
 
 ## Roadmap
 
-### v0.2 — "Actually Usable"
-- [ ] texlab LSP via QProcess + JSON-RPC (completions, hover, goto-def)
-- [ ] Auto-compile on save (QFileSystemWatcher)
-- [ ] File tree sidebar (QTreeView + QFileSystemModel)
-- [ ] Built-in LaTeX snippets (TOML-defined, tab-trigger)
-- [ ] Find/replace with regex
-- [ ] Configurable keybindings (TOML -> QKeySequence)
-- [ ] Error/warning panel with click-to-jump
+### v0.2 — "Actually Usable" (done)
+- [x] Configurable keybindings (TOML -> QKeySequence)
+- [x] Error/warning panel with click-to-jump
+- [x] Auto-compile on save
+- [x] Find/replace with regex
+- [x] File tree sidebar
+- [x] Built-in LaTeX snippets (TOML-defined, tab-trigger)
+- [x] texlab LSP via QProcess + JSON-RPC (autocomplete, hover, goto-def, diagnostics)
+- [x] Fuzzy command palette matching with scoring
 
 ### v0.3 — "Power User"
 - [ ] Vim mode — C++ state machine (Normal/Insert/Visual/Command/Search)
 - [ ] LaTeX text objects: `i$`/`a$`, `ie`/`ae`, `ic`/`ac`
 - [ ] Registers, macros, marks, `.` repeat, ex-commands
-- [ ] SyncTeX wired to UI (click PDF -> jump to editor, and vice versa)
+- [ ] SyncTeX inverse search: double-click text in PDF preview → jump to that line in the editor
+- [ ] SyncTeX forward search: Ctrl+click in editor → highlight corresponding position in PDF
 - [ ] Multi-file projects (\input/\include tracking)
 - [ ] BibTeX integration + citation completion
 - [ ] i18n via QTranslator
@@ -184,10 +225,12 @@ lightTex/
 - [ ] AI plugin (Lua, wrapping Ollama/cloud APIs)
 - [ ] Performance optimization pass
 - [ ] Accessibility (Qt Accessibility framework)
+- [ ] Autosave (debounced, configurable interval, dirty indicator, backup copies)
 - [ ] Auto-updater
 
 ### v1.0 — "Release"
 - [ ] >70% test coverage, benchmarks published
+- [ ] First-run setup wizard: auto-detect and install missing prerequisites (LaTeX distribution, texlab, etc.)
 - [ ] Platform installers (.msi, .dmg, .deb, .AppImage)
 - [ ] Homebrew, Scoop, Flathub distribution
 - [ ] User guide + Lua plugin developer guide
@@ -204,10 +247,10 @@ lightTex/
 | TOML parsing | toml++ |
 | Compilation | QProcess |
 | Source-PDF sync | SyncTeX |
+| LSP | texlab via JSON-RPC |
 | Testing | Google Test + QTest |
 | Build | CMake |
 | Future: Plugins | Sol2 + LuaJIT (v0.4) |
-| Future: LSP | texlab via JSON-RPC (v0.2) |
 
 ## Contributing
 

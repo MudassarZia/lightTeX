@@ -2,6 +2,8 @@
 
 #include <QColor>
 
+#include <algorithm>
+
 namespace lighttex::syntax {
 
 SyntaxHighlighterBridge::SyntaxHighlighterBridge(QTextDocument* parent)
@@ -55,6 +57,12 @@ void SyntaxHighlighterBridge::doReparse() {
     std::string source = doc->toPlainText().toStdString();
     cachedEvents_ = highlighter_.parse(source);
 
+    // Sort by startByte for binary search in highlightBlock
+    std::sort(cachedEvents_.begin(), cachedEvents_.end(),
+              [](const HighlightEvent& a, const HighlightEvent& b) {
+                  return a.startByte < b.startByte;
+              });
+
     isHighlighting_ = true;
     rehighlight();
     isHighlighting_ = false;
@@ -66,19 +74,33 @@ void SyntaxHighlighterBridge::highlightBlock(const QString& text) {
     int blockStart = currentBlock().position();
     int blockEnd = blockStart + text.length();
 
-    for (const auto& event : cachedEvents_) {
-        int evStart = static_cast<int>(event.startByte);
-        int evEnd = static_cast<int>(event.endByte);
+    // Binary search: find first event that could overlap this block
+    // An event overlaps if evEnd > blockStart, so find first event
+    // where startByte could be relevant (startByte < blockEnd)
+    HighlightEvent probe;
+    probe.startByte = static_cast<size_t>(blockStart);
+    auto it = std::lower_bound(
+        cachedEvents_.begin(), cachedEvents_.end(), probe,
+        [](const HighlightEvent& ev, const HighlightEvent& val) {
+            return ev.endByte <= val.startByte;
+        });
+
+    for (; it != cachedEvents_.end(); ++it) {
+        int evStart = static_cast<int>(it->startByte);
+        int evEnd = static_cast<int>(it->endByte);
+
+        // Past this block — done
+        if (evStart >= blockEnd) break;
 
         // Check overlap with current block
-        if (evEnd <= blockStart || evStart >= blockEnd) continue;
+        if (evEnd <= blockStart) continue;
 
         int start = std::max(evStart - blockStart, 0);
         int end = std::min(evEnd - blockStart, static_cast<int>(text.length()));
         int length = end - start;
 
         if (length > 0) {
-            setFormat(start, length, formatForKind(event.kind));
+            setFormat(start, length, formatForKind(it->kind));
         }
     }
 }

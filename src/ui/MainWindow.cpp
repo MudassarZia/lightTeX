@@ -1,6 +1,5 @@
 #include "ui/MainWindow.h"
 
-#include <QKeyEvent>
 #include <QVBoxLayout>
 
 namespace lighttex::ui {
@@ -21,18 +20,36 @@ void MainWindow::setupUi() {
     // Toolbar
     setupToolBar();
 
-    // Main horizontal splitter: editor | PDF
+    // Main horizontal splitter: fileTree | editor+compile | PDF
     mainSplitter_ = new QSplitter(Qt::Horizontal, centralWidget);
 
-    // Vertical splitter for editor + compile panel
+    // File tree sidebar (hidden by default)
+    fileTree_ = new FileTreeWidget();
+    fileTree_->setFixedWidth(200);
+    fileTree_->hide();
+    mainSplitter_->addWidget(fileTree_);
+
+    // Vertical splitter for editor area (find bar + editor + compile panel)
     verticalSplitter_ = new QSplitter(Qt::Vertical);
 
+    // Editor with find/replace bar overlay container
+    auto* editorContainer = new QWidget();
+    auto* editorLayout = new QVBoxLayout(editorContainer);
+    editorLayout->setContentsMargins(0, 0, 0, 0);
+    editorLayout->setSpacing(0);
+
     editor_ = new lighttex::editor::EditorWidget();
+    findReplaceBar_ = new lighttex::editor::FindReplaceBar(editor_);
+    findReplaceBar_->hide();
+
+    editorLayout->addWidget(findReplaceBar_);
+    editorLayout->addWidget(editor_);
+
     compilePanel_ = new CompilePanel();
     compilePanel_->setMaximumHeight(200);
     compilePanel_->hide();
 
-    verticalSplitter_->addWidget(editor_);
+    verticalSplitter_->addWidget(editorContainer);
     verticalSplitter_->addWidget(compilePanel_);
     verticalSplitter_->setStretchFactor(0, 3);
     verticalSplitter_->setStretchFactor(1, 1);
@@ -41,8 +58,9 @@ void MainWindow::setupUi() {
 
     mainSplitter_->addWidget(verticalSplitter_);
     mainSplitter_->addWidget(pdfWidget_);
-    mainSplitter_->setStretchFactor(0, 1);
+    mainSplitter_->setStretchFactor(0, 0); // file tree: no stretch
     mainSplitter_->setStretchFactor(1, 1);
+    mainSplitter_->setStretchFactor(2, 1);
 
     mainLayout->addWidget(mainSplitter_);
 
@@ -62,16 +80,6 @@ void MainWindow::setupToolBar() {
     toolBar_->setMovable(false);
     toolBar_->setFloatable(false);
     // Actions are added by AppState/Actions
-}
-
-void MainWindow::keyPressEvent(QKeyEvent* event) {
-    // Ctrl+Shift+P for command palette
-    if (event->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier) &&
-        event->key() == Qt::Key_P) {
-        commandPalette_->toggle();
-        return;
-    }
-    QMainWindow::keyPressEvent(event);
 }
 
 } // namespace lighttex::ui

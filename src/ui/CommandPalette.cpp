@@ -4,7 +4,50 @@
 #include <QPainter>
 #include <QVBoxLayout>
 
+#include <algorithm>
+
 namespace lighttex::ui {
+
+// Fuzzy subsequence match: returns score (higher = better), -1 = no match
+static int fuzzyScore(const QString& text, const QString& pattern) {
+    if (pattern.isEmpty()) return 0;
+
+    int ti = 0;
+    int pi = 0;
+    int score = 0;
+    int consecutive = 0;
+    bool prevMatched = false;
+
+    while (ti < text.length() && pi < pattern.length()) {
+        if (text[ti].toLower() == pattern[pi].toLower()) {
+            score += 10;
+            // Bonus for consecutive matches
+            if (prevMatched) {
+                consecutive++;
+                score += consecutive * 5;
+            } else {
+                consecutive = 0;
+            }
+            // Bonus for match at word boundary
+            if (ti == 0 || text[ti - 1] == ' ' || text[ti - 1] == '.' ||
+                text[ti - 1] == '_' || text[ti - 1] == '-') {
+                score += 20;
+            }
+            // Bonus for exact case match
+            if (text[ti] == pattern[pi]) {
+                score += 2;
+            }
+            prevMatched = true;
+            ++pi;
+        } else {
+            prevMatched = false;
+            consecutive = 0;
+        }
+        ++ti;
+    }
+
+    return (pi == pattern.length()) ? score : -1;
+}
 
 CommandPalette::CommandPalette(QWidget* parent) : QWidget(parent) {
     setWindowFlags(Qt::Widget);
@@ -137,16 +180,12 @@ void CommandPalette::filterCommands(const QString& filter) {
     listWidget_->clear();
     filteredIndices_.clear();
 
-    QString lowerFilter = filter.toLower();
-
-    for (size_t i = 0; i < commands_.size(); ++i) {
-        const auto& cmd = commands_[i];
-        QString label = QString::fromStdString(cmd.label);
-        QString category = QString::fromStdString(cmd.category);
-
-        if (filter.isEmpty() ||
-            label.toLower().contains(lowerFilter) ||
-            category.toLower().contains(lowerFilter)) {
+    if (filter.isEmpty()) {
+        // Show all commands
+        for (size_t i = 0; i < commands_.size(); ++i) {
+            const auto& cmd = commands_[i];
+            QString label = QString::fromStdString(cmd.label);
+            QString category = QString::fromStdString(cmd.category);
             QString display = label;
             if (!cmd.shortcut.empty()) {
                 display += "  (" + QString::fromStdString(cmd.shortcut) + ")";
@@ -156,6 +195,46 @@ void CommandPalette::filterCommands(const QString& filter) {
             }
             listWidget_->addItem(display);
             filteredIndices_.push_back(i);
+        }
+    } else {
+        // Fuzzy subsequence matching with scoring
+        struct ScoredIndex {
+            size_t index;
+            int score;
+        };
+        std::vector<ScoredIndex> scored;
+
+        for (size_t i = 0; i < commands_.size(); ++i) {
+            const auto& cmd = commands_[i];
+            QString label = QString::fromStdString(cmd.label);
+            QString category = QString::fromStdString(cmd.category);
+            QString searchText = category + " " + label;
+
+            int s = fuzzyScore(searchText, filter);
+            if (s >= 0) {
+                scored.push_back({i, s});
+            }
+        }
+
+        // Sort by score descending
+        std::sort(scored.begin(), scored.end(),
+                  [](const ScoredIndex& a, const ScoredIndex& b) {
+                      return a.score > b.score;
+                  });
+
+        for (const auto& si : scored) {
+            const auto& cmd = commands_[si.index];
+            QString label = QString::fromStdString(cmd.label);
+            QString category = QString::fromStdString(cmd.category);
+            QString display = label;
+            if (!cmd.shortcut.empty()) {
+                display += "  (" + QString::fromStdString(cmd.shortcut) + ")";
+            }
+            if (!cmd.category.empty()) {
+                display = "[" + category + "] " + display;
+            }
+            listWidget_->addItem(display);
+            filteredIndices_.push_back(si.index);
         }
     }
 

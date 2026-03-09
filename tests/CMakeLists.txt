@@ -32,10 +32,17 @@ set(LIGHTTEX_LIB_SOURCES
     ${CMAKE_SOURCE_DIR}/src/editor/EditorWidget.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/LineNumberArea.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/BracketMatcher.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/FindReplaceBar.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/MainWindow.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/StatusBar.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/CommandPalette.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/CompilePanel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/FileTreeWidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/shortcuts/Shortcuts.cpp
+    ${CMAKE_SOURCE_DIR}/src/snippets/Snippets.cpp
+    ${CMAKE_SOURCE_DIR}/src/snippets/SnippetSession.cpp
+    ${CMAKE_SOURCE_DIR}/src/lsp/LspClient.cpp
+    ${CMAKE_SOURCE_DIR}/src/lsp/CompletionWidget.cpp
     ${CMAKE_SOURCE_DIR}/src/app/AppState.cpp
     ${CMAKE_SOURCE_DIR}/src/app/Actions.cpp
 )
@@ -96,3 +103,13 @@ add_lighttex_test(test_theme)
 # Widget tests (QTest via Google Test wrapper)
 add_lighttex_test(test_commandpalette)
 add_lighttex_test(test_editorwidget)
+
+# v0.2 tests
+add_lighttex_test(test_shortcuts)
+add_lighttex_test(test_compilepanel)
+add_lighttex_test(test_findreplace)
+add_lighttex_test(test_filetree)
+add_lighttex_test(test_snippets)
+add_lighttex_test(test_jsonrpc)
+add_lighttex_test(test_lsptypes)
+add_lighttex_test(test_completionwidget)

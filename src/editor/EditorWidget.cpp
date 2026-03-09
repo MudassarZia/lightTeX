@@ -94,6 +94,10 @@ void EditorWidget::resizeEvent(QResizeEvent* event) {
 }
 
 void EditorWidget::highlightCurrentLine() {
+    updateExtraSelections();
+}
+
+void EditorWidget::updateExtraSelections() {
     QList<QTextEdit::ExtraSelection> extraSelections;
 
     if (!isReadOnly()) {
@@ -105,9 +109,9 @@ void EditorWidget::highlightCurrentLine() {
         extraSelections.append(selection);
     }
 
-    // Bracket matching
+    // Bracket matching using QTextDocument (no full text copy)
     auto brackets = bracketMatcher_.findMatchingBrackets(
-        toPlainText(), textCursor().position());
+        document(), textCursor().position());
     for (int pos : brackets) {
         QTextEdit::ExtraSelection sel;
         sel.format.setBackground(bracketMatchBg_);
@@ -118,7 +122,21 @@ void EditorWidget::highlightCurrentLine() {
         extraSelections.append(sel);
     }
 
+    // Merge search highlights
+    extraSelections.append(searchHighlights_);
+
     setExtraSelections(extraSelections);
+}
+
+void EditorWidget::setSearchHighlights(
+    const QList<QTextEdit::ExtraSelection>& highlights) {
+    searchHighlights_ = highlights;
+    updateExtraSelections();
+}
+
+void EditorWidget::clearSearchHighlights() {
+    searchHighlights_.clear();
+    updateExtraSelections();
 }
 
 void EditorWidget::lineNumberAreaPaintEvent(QPaintEvent* event) {

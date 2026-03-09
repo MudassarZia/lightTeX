@@ -1,0 +1,28 @@
+{
+  "name": "lighttex",
+  "version": "0.1.0",
+  "description": "Keyboard-first LaTeX editor built with C++ and Qt 6",
+  "license": "AGPL-3.0-only",
+  "dependencies": [
+    {
+      "name": "qt6-base",
+      "version>=": "6.6.0"
+    },
+    "tomlplusplus"
+  ],
+  "overrides": [],
+  "features": {
+    "poppler": {
+      "description": "PDF rendering with Poppler",
+      "dependencies": ["poppler"]
+    },
+    "tests": {
+      "description": "Build tests with Google Test",
+      "dependencies": ["gtest"]
+    },
+    "benchmarks": {
+      "description": "Build benchmarks with Google Benchmark",
+      "dependencies": ["benchmark"]
+    }
+  }
+}

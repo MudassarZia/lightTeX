@@ -1,0 +1,89 @@
+[[snippet]]
+trigger = "\\begin"
+label = "Begin Environment"
+body = "\\begin{${1:environment}}\n\t$0\n\\end{${1:environment}}"
+
+[[snippet]]
+trigger = "\\frac"
+label = "Fraction"
+body = "\\frac{${1:num}}{${2:den}}$0"
+
+[[snippet]]
+trigger = "\\fig"
+label = "Figure"
+body = "\\begin{figure}[${1:htbp}]\n\t\\centering\n\t\\includegraphics[width=${2:0.8}\\textwidth]{${3:file}}\n\t\\caption{${4:caption}}\n\t\\label{fig:${5:label}}\n\\end{figure}$0"
+
+[[snippet]]
+trigger = "\\tab"
+label = "Table"
+body = "\\begin{table}[${1:htbp}]\n\t\\centering\n\t\\begin{tabular}{${2:cc}}\n\t\t$0\n\t\\end{tabular}\n\t\\caption{${3:caption}}\n\t\\label{tab:${4:label}}\n\\end{table}"
+
+[[snippet]]
+trigger = "\\eq"
+label = "Equation"
+body = "\\begin{equation}\n\t${1:equation}\n\t\\label{eq:${2:label}}\n\\end{equation}$0"
+
+[[snippet]]
+trigger = "\\enum"
+label = "Enumerate"
+body = "\\begin{enumerate}\n\t\\item $0\n\\end{enumerate}"
+
+[[snippet]]
+trigger = "\\item"
+label = "Itemize"
+body = "\\begin{itemize}\n\t\\item $0\n\\end{itemize}"
+
+[[snippet]]
+trigger = "\\sec"
+label = "Section"
+body = "\\section{${1:title}}\n$0"
+
+[[snippet]]
+trigger = "\\subsec"
+label = "Subsection"
+body = "\\subsection{${1:title}}\n$0"
+
+[[snippet]]
+trigger = "\\cite"
+label = "Citation"
+body = "\\cite{${1:key}}$0"
+
+[[snippet]]
+trigger = "\\ref"
+label = "Reference"
+body = "\\ref{${1:label}}$0"
+
+[[snippet]]
+trigger = "\\label"
+label = "Label"
+body = "\\label{${1:label}}$0"
+
+[[snippet]]
+trigger = "\\emph"
+label = "Emphasize"
+body = "\\emph{${1:text}}$0"
+
+[[snippet]]
+trigger = "\\textbf"
+label = "Bold"
+body = "\\textbf{${1:text}}$0"
+
+[[snippet]]
+trigger = "\\textit"
+label = "Italic"
+body = "\\textit{${1:text}}$0"
+
+[[snippet]]
+trigger = "\\href"
+label = "Hyperlink"
+body = "\\href{${1:url}}{${2:text}}$0"
+
+[[snippet]]
+trigger = "\\url"
+label = "URL"
+body = "\\url{${1:url}}$0"
+
+[[snippet]]
+trigger = "\\doc"
+label = "Document"
+body = "\\documentclass[${1:12pt}]{${2:article}}\n\n\\begin{document}\n\n$0\n\n\\end{document}"

@@ -4,6 +4,7 @@
 #include <QFileDialog>
 #include <QKeySequence>
 #include <QMessageBox>
+#include <QTimer>
 #include <QToolBar>
 
 namespace lighttex::app {
@@ -15,21 +16,23 @@ Actions::Actions(AppState* state, lighttex::ui::MainWindow* window,
 }
 
 void Actions::setupActions() {
+    auto& sc = state_->shortcuts();
+
     // Open file
     openAction_ = new QAction("Open", this);
-    openAction_->setShortcut(QKeySequence::Open);
+    openAction_->setShortcut(sc.keySequence("file.open"));
     connect(openAction_, &QAction::triggered, this, &Actions::openFile);
     window_->addAction(openAction_);
 
     // Save file
     saveAction_ = new QAction("Save", this);
-    saveAction_->setShortcut(QKeySequence::Save);
+    saveAction_->setShortcut(sc.keySequence("file.save"));
     connect(saveAction_, &QAction::triggered, this, &Actions::saveFile);
     window_->addAction(saveAction_);
 
     // Compile
     compileAction_ = new QAction("Compile", this);
-    compileAction_->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Return));
+    compileAction_->setShortcut(sc.keySequence("compile"));
     connect(compileAction_, &QAction::triggered, this, &Actions::compileDocument);
     window_->addAction(compileAction_);
 
@@ -42,9 +45,27 @@ void Actions::setupActions() {
 
     // Command palette
     paletteAction_ = new QAction("Command Palette", this);
-    paletteAction_->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_P));
+    paletteAction_->setShortcut(sc.keySequence("palette"));
     connect(paletteAction_, &QAction::triggered, this, &Actions::toggleCommandPalette);
     window_->addAction(paletteAction_);
+
+    // Find
+    findAction_ = new QAction("Find", this);
+    findAction_->setShortcut(sc.keySequence("find"));
+    connect(findAction_, &QAction::triggered, this, &Actions::showFind);
+    window_->addAction(findAction_);
+
+    // Find & Replace
+    findReplaceAction_ = new QAction("Find and Replace", this);
+    findReplaceAction_->setShortcut(sc.keySequence("find_replace"));
+    connect(findReplaceAction_, &QAction::triggered, this, &Actions::showFindReplace);
+    window_->addAction(findReplaceAction_);
+
+    // Toggle file tree
+    toggleFileTreeAction_ = new QAction("Toggle File Tree", this);
+    toggleFileTreeAction_->setShortcut(sc.keySequence("toggle_filetree"));
+    connect(toggleFileTreeAction_, &QAction::triggered, this, &Actions::toggleFileTree);
+    window_->addAction(toggleFileTreeAction_);
 
     // Add to toolbar
     QToolBar* toolbar = window_->findChild<QToolBar*>();
@@ -77,15 +98,50 @@ void Actions::setupActions() {
         }
     });
 
+    // Wire up compile panel click-to-jump
+    connect(window_->compilePanel(),
+            &lighttex::ui::CompilePanel::messageClicked,
+            this, [this](const lighttex::compiler::CompileMessage& msg) {
+        if (msg.line) {
+            auto* editor = window_->editor();
+            QTextCursor cursor(editor->document()->findBlockByNumber(*msg.line - 1));
+            editor->setTextCursor(cursor);
+            editor->setFocus();
+        }
+    });
+
     // Wire up file open
     connect(state_, &AppState::fileOpened, this,
             [this](const QString& name, const QString& content) {
         window_->editor()->setPlainText(content);
         window_->setWindowTitle(name + " - lightTex");
 
-        // Re-highlight
-        auto events = state_->highlighter().parse(content.toStdString());
-        // SyntaxHighlighter bridge handles this via QTextDocument
+        // Update file tree root
+        if (!state_->projectRoot().empty()) {
+            window_->fileTree()->setRootPath(
+                QString::fromStdString(state_->projectRoot()));
+        }
+    });
+
+    // Wire up file tree
+    connect(window_->fileTree(),
+            &lighttex::ui::FileTreeWidget::fileActivated,
+            this, [this](const QString& path) {
+        try {
+            state_->openFile(path.toStdString());
+        } catch (const lighttex::core::DocumentError& e) {
+            QMessageBox::critical(window_, "Error",
+                                  QString("Cannot open file: %1").arg(e.what()));
+        }
+    });
+
+    // Wire up auto-compile on save
+    connect(state_, &AppState::fileSaved, this, [this]() {
+        if (state_->autoCompileEnabled()) {
+            QTimer::singleShot(100, this, [this]() {
+                compileDocument();
+            });
+        }
     });
 
     // Wire up theme changes
@@ -94,6 +150,8 @@ void Actions::setupActions() {
         window_->editor()->setTheme(theme);
         window_->commandPalette()->setTheme(theme);
         window_->compilePanel()->setTheme(theme);
+        window_->findReplaceBar()->setTheme(theme);
+        window_->fileTree()->setTheme(theme);
         window_->statusBar()->setEngine(state_->compiler().engine());
     });
 
@@ -102,6 +160,8 @@ void Actions::setupActions() {
     window_->editor()->setTheme(state_->themeManager().current());
     window_->commandPalette()->setTheme(state_->themeManager().current());
     window_->compilePanel()->setTheme(state_->themeManager().current());
+    window_->findReplaceBar()->setTheme(state_->themeManager().current());
+    window_->fileTree()->setTheme(state_->themeManager().current());
 
     // Setup command palette commands
     setupCommandPalette();
@@ -173,18 +233,50 @@ void Actions::toggleCommandPalette() {
     window_->commandPalette()->toggle();
 }
 
+void Actions::toggleAutoCompile() {
+    state_->setAutoCompile(!state_->autoCompileEnabled());
+    window_->statusBar()->setAutoCompile(state_->autoCompileEnabled());
+}
+
+void Actions::toggleFileTree() {
+    window_->fileTree()->setVisible(!window_->fileTree()->isVisible());
+}
+
+void Actions::showFind() {
+    window_->findReplaceBar()->showFind();
+}
+
+void Actions::showFindReplace() {
+    window_->findReplaceBar()->showFindReplace();
+}
+
 void Actions::setupCommandPalette() {
+    auto& sc = state_->shortcuts();
     std::vector<lighttex::ui::Command> commands = {
-        {"file.open", "Open File", "File", "Ctrl+O",
+        {"file.open", "Open File", "File",
+         sc.keySequenceString("file.open").toStdString(),
          [this]() { openFile(); }},
-        {"file.save", "Save File", "File", "Ctrl+S",
+        {"file.save", "Save File", "File",
+         sc.keySequenceString("file.save").toStdString(),
          [this]() { saveFile(); }},
-        {"compile", "Compile Document", "Build", "Ctrl+Enter",
+        {"compile", "Compile Document", "Build",
+         sc.keySequenceString("compile").toStdString(),
          [this]() { compileDocument(); }},
         {"theme.dark", "Switch to Dark Theme", "Theme", "",
          [this]() { switchThemeDark(); }},
         {"theme.light", "Switch to Light Theme", "Theme", "",
          [this]() { switchThemeLight(); }},
+        {"find", "Find", "Edit",
+         sc.keySequenceString("find").toStdString(),
+         [this]() { showFind(); }},
+        {"find_replace", "Find and Replace", "Edit",
+         sc.keySequenceString("find_replace").toStdString(),
+         [this]() { showFindReplace(); }},
+        {"toggle_filetree", "Toggle File Tree", "View",
+         sc.keySequenceString("toggle_filetree").toStdString(),
+         [this]() { toggleFileTree(); }},
+        {"toggle_autocompile", "Toggle Auto-Compile", "Build", "",
+         [this]() { toggleAutoCompile(); }},
     };
     window_->commandPalette()->setCommands(commands);
 }

@@ -4,6 +4,7 @@
 #include "theme/Theme.h"
 
 #include <QPlainTextEdit>
+#include <QTextEdit>
 
 namespace lighttex::editor {
 
@@ -19,6 +20,10 @@ public:
     void lineNumberAreaPaintEvent(QPaintEvent* event);
     int lineNumberAreaWidth() const;
 
+    // Search highlight support
+    void setSearchHighlights(const QList<QTextEdit::ExtraSelection>& highlights);
+    void clearSearchHighlights();
+
 signals:
     void cursorPositionUpdated(int line, int col);
 
@@ -33,6 +38,8 @@ private slots:
     void onCursorMoved();
 
 private:
+    void updateExtraSelections();
+
     LineNumberArea* lineNumberArea_;
     BracketMatcher bracketMatcher_;
     QColor lineHighlightColor_;
@@ -40,6 +47,7 @@ private:
     QColor gutterFg_;
     QColor bracketMatchBg_ = QColor("#5a5a5a");
     QColor bracketMatchFg_ = QColor("#ffd700");
+    QList<QTextEdit::ExtraSelection> searchHighlights_;
 };
 
 } // namespace lighttex::editor

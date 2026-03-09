@@ -18,6 +18,8 @@ public:
     void setCompileStatus(lighttex::compiler::CompileStatus status);
     void setEngine(lighttex::compiler::Engine engine);
     void setFileName(const QString& name);
+    void setAutoCompile(bool enabled);
+    void setLspStatus(const QString& status);
 
 private:
     void updateStatusLabel();
@@ -25,6 +27,8 @@ private:
     QLabel* positionLabel_;
     QLabel* statusLabel_;
     QLabel* engineLabel_;
+    QLabel* autoCompileLabel_;
+    QLabel* lspLabel_;
     QLabel* encodingLabel_;
 
     lighttex::compiler::CompileStatus compileStatus_ =

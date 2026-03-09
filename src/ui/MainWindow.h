@@ -2,9 +2,11 @@
 
 #include "compiler/Pipeline.h"
 #include "editor/EditorWidget.h"
+#include "editor/FindReplaceBar.h"
 #include "pdf/PdfWidget.h"
 #include "ui/CommandPalette.h"
 #include "ui/CompilePanel.h"
+#include "ui/FileTreeWidget.h"
 #include "ui/StatusBar.h"
 
 #include <QMainWindow>
@@ -24,9 +26,8 @@ public:
     CompilePanel* compilePanel() { return compilePanel_; }
     LightTexStatusBar* statusBar() { return statusBar_; }
     CommandPalette* commandPalette() { return commandPalette_; }
-
-protected:
-    void keyPressEvent(QKeyEvent* event) override;
+    lighttex::editor::FindReplaceBar* findReplaceBar() { return findReplaceBar_; }
+    FileTreeWidget* fileTree() { return fileTree_; }
 
 private:
     void setupUi();
@@ -37,6 +38,8 @@ private:
     CompilePanel* compilePanel_;
     LightTexStatusBar* statusBar_;
     CommandPalette* commandPalette_;
+    lighttex::editor::FindReplaceBar* findReplaceBar_;
+    FileTreeWidget* fileTree_;
     QSplitter* mainSplitter_;
     QSplitter* verticalSplitter_;
     QToolBar* toolBar_;

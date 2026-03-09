@@ -5,99 +5,80 @@ on:
     tags:
       - "v*"
 
-env:
-  CARGO_TERM_COLOR: always
+permissions:
+  contents: write
 
 jobs:
   build:
-    name: Build (${{ matrix.target }})
+    name: Build (${{ matrix.artifact }})
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
+            artifact: lighttex-linux
           - os: macos-latest
-            target: aarch64-apple-darwin
+            artifact: lighttex-macos
           - os: windows-latest
-            target: x86_64-pc-windows-msvc
+            artifact: lighttex-windows
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
 
-      - name: Install system dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install Qt (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y qt6-base-dev libgl1-mesa-dev
 
-      - name: Install Tauri CLI
-        uses: cargo-bins/cargo-binstall@main
-      - run: cargo binstall tauri-cli@^2 --no-confirm
+      - name: Install Qt (macOS)
+        if: runner.os == 'macOS'
+        run: brew install qt@6
 
-      - name: Install frontend deps
-        working-directory: frontend
-        run: npm ci
+      - name: Install Qt (Windows)
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
 
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DLIGHTTEX_BUILD_TESTS=OFF
 
-      - name: Build release
-        run: cargo tauri build
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ""
+      - name: Build
+        run: cmake --build build --config Release
 
-      - name: Upload Linux artifacts
-        if: matrix.os == 'ubuntu-latest'
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            cp build/Release/lightTex.exe dist/ 2>/dev/null || cp build/lightTex.exe dist/
+          else
+            cp build/lightTex dist/
+          fi
+          cp -r themes dist/
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lighttex-linux
-          path: |
-            target/release/bundle/deb/*.deb
-            target/release/bundle/appimage/*.AppImage
-
-      - name: Upload macOS artifacts
-        if: matrix.os == 'macos-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: lighttex-macos
-          path: |
-            target/release/bundle/dmg/*.dmg
-
-      - name: Upload Windows artifacts
-        if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: lighttex-windows
-          path: |
-            target/release/bundle/msi/*.msi
-            target/release/bundle/nsis/*.exe
+          name: ${{ matrix.artifact }}
+          path: dist/
 
   publish:
     name: Publish Release
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-
       - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           prerelease: true
-          body_path: RELEASE_NOTES.md
-          files: |
-            artifacts/**/*.deb
-            artifacts/**/*.AppImage
-            artifacts/**/*.dmg
-            artifacts/**/*.msi
-            artifacts/**/*.exe
+          generate_release_notes: true
+          files: artifacts/**/*
