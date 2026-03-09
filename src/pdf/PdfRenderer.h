@@ -12,40 +12,40 @@
 namespace lighttex::pdf {
 
 class PdfError : public std::runtime_error {
-    using std::runtime_error::runtime_error;
+  using std::runtime_error::runtime_error;
 };
 
 struct RenderedPage {
-    int pageNum;
-    int width;
-    int height;
-    QImage image;
+  int pageNum;
+  int width;
+  int height;
+  QImage image;
 };
 
 class PdfRenderer {
 public:
-    PdfRenderer() = default;
-    ~PdfRenderer();
+  PdfRenderer() = default;
+  ~PdfRenderer();
 
-    void open(const std::string& path);
-    void reload();
-    void close();
+  void open(const std::string &path);
+  void reload();
+  void close();
 
-    [[nodiscard]] int pageCount() const { return pageCount_; }
-    [[nodiscard]] bool isLoaded() const { return !path_.empty(); }
-    [[nodiscard]] const std::string& path() const { return path_; }
+  [[nodiscard]] int pageCount() const { return pageCount_; }
+  [[nodiscard]] bool isLoaded() const { return !path_.empty(); }
+  [[nodiscard]] const std::string &path() const { return path_; }
 
-    RenderedPage renderPage(int pageNum, int dpi = 150);
+  RenderedPage renderPage(int pageNum, int dpi = 150);
 
 private:
-    std::string path_;
-    int pageCount_ = 0;
+  std::string path_;
+  int pageCount_ = 0;
 
 #ifdef LIGHTTEX_HAS_POPPLER
-    void* popplerDoc_ = nullptr;
+  void *popplerDoc_ = nullptr;
 #endif
 #ifdef LIGHTTEX_HAS_QT_PDF
-    QPdfDocument* qtPdfDoc_ = nullptr;
+  QPdfDocument *qtPdfDoc_ = nullptr;
 #endif
 };
 

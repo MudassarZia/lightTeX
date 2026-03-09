@@ -9,8 +9,8 @@ enum class Mode { Normal, Insert, Visual, Command, Search };
 
 class VimMode {
 public:
-    VimMode() = default;
-    // TODO (v0.3): Full vim emulation
+  VimMode() = default;
+  // TODO (v0.3): Full vim emulation
 };
 
 } // namespace lighttex::vim

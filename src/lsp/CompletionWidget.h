@@ -11,33 +11,33 @@ namespace lighttex::lsp {
 enum class TriggerKind { Command, Argument };
 
 class CompletionWidget : public QListWidget {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    explicit CompletionWidget(QPlainTextEdit* editor);
+  explicit CompletionWidget(QPlainTextEdit *editor);
 
-    void showCompletions(const std::vector<CompletionItem>& items);
-    void hideCompletions();
-    void startArgumentSession(int triggerPos);
-    [[nodiscard]] int triggerPos() const { return triggerPos_; }
-    [[nodiscard]] TriggerKind triggerKind() const { return triggerKind_; }
+  void showCompletions(const std::vector<CompletionItem> &items);
+  void hideCompletions();
+  void startArgumentSession(int triggerPos);
+  [[nodiscard]] int triggerPos() const { return triggerPos_; }
+  [[nodiscard]] TriggerKind triggerKind() const { return triggerKind_; }
 
 signals:
-    void completionRequested();
-    void refreshRequested();
-    void itemChosen(const CompletionItem& item, int triggerPos, int cursorPos,
-                    lighttex::lsp::TriggerKind triggerKind);
+  void completionRequested();
+  void refreshRequested();
+  void itemChosen(const CompletionItem &item, int triggerPos, int cursorPos,
+                  lighttex::lsp::TriggerKind triggerKind);
 
 protected:
-    bool eventFilter(QObject* obj, QEvent* event) override;
+  bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
-    void positionPopup();
+  void positionPopup();
 
-    QPlainTextEdit* editor_;
-    std::vector<CompletionItem> items_;
-    int triggerPos_ = -1;
-    TriggerKind triggerKind_ = TriggerKind::Command;
+  QPlainTextEdit *editor_;
+  std::vector<CompletionItem> items_;
+  int triggerPos_ = -1;
+  TriggerKind triggerKind_ = TriggerKind::Command;
 };
 
 } // namespace lighttex::lsp

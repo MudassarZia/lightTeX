@@ -16,33 +16,33 @@
 namespace lighttex::ui {
 
 class MainWindow : public QMainWindow {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget* parent = nullptr);
+  explicit MainWindow(QWidget *parent = nullptr);
 
-    lighttex::editor::EditorWidget* editor() { return editor_; }
-    lighttex::pdf::PdfWidget* pdfWidget() { return pdfWidget_; }
-    CompilePanel* compilePanel() { return compilePanel_; }
-    LightTexStatusBar* statusBar() { return statusBar_; }
-    CommandPalette* commandPalette() { return commandPalette_; }
-    lighttex::editor::FindReplaceBar* findReplaceBar() { return findReplaceBar_; }
-    FileTreeWidget* fileTree() { return fileTree_; }
+  lighttex::editor::EditorWidget *editor() { return editor_; }
+  lighttex::pdf::PdfWidget *pdfWidget() { return pdfWidget_; }
+  CompilePanel *compilePanel() { return compilePanel_; }
+  LightTexStatusBar *statusBar() { return statusBar_; }
+  CommandPalette *commandPalette() { return commandPalette_; }
+  lighttex::editor::FindReplaceBar *findReplaceBar() { return findReplaceBar_; }
+  FileTreeWidget *fileTree() { return fileTree_; }
 
 private:
-    void setupUi();
-    void setupToolBar();
+  void setupUi();
+  void setupToolBar();
 
-    lighttex::editor::EditorWidget* editor_;
-    lighttex::pdf::PdfWidget* pdfWidget_;
-    CompilePanel* compilePanel_;
-    LightTexStatusBar* statusBar_;
-    CommandPalette* commandPalette_;
-    lighttex::editor::FindReplaceBar* findReplaceBar_;
-    FileTreeWidget* fileTree_;
-    QSplitter* mainSplitter_;
-    QSplitter* verticalSplitter_;
-    QToolBar* toolBar_;
+  lighttex::editor::EditorWidget *editor_;
+  lighttex::pdf::PdfWidget *pdfWidget_;
+  CompilePanel *compilePanel_;
+  LightTexStatusBar *statusBar_;
+  CommandPalette *commandPalette_;
+  lighttex::editor::FindReplaceBar *findReplaceBar_;
+  FileTreeWidget *fileTree_;
+  QSplitter *mainSplitter_;
+  QSplitter *verticalSplitter_;
+  QToolBar *toolBar_;
 };
 
 } // namespace lighttex::ui

@@ -7,18 +7,18 @@ namespace lighttex::editor {
 class EditorWidget;
 
 class LineNumberArea : public QWidget {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    explicit LineNumberArea(EditorWidget* editor);
+  explicit LineNumberArea(EditorWidget *editor);
 
-    QSize sizeHint() const override;
+  QSize sizeHint() const override;
 
 protected:
-    void paintEvent(QPaintEvent* event) override;
+  void paintEvent(QPaintEvent *event) override;
 
 private:
-    EditorWidget* editor_;
+  EditorWidget *editor_;
 };
 
 } // namespace lighttex::editor

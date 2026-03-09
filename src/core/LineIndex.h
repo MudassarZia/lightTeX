@@ -6,6 +6,7 @@
 namespace lighttex::core {
 
 // LineIndex is integrated into PieceTable directly via lazy line-start cache.
-// This header is reserved for potential future separate line index implementation.
+// This header is reserved for potential future separate line index
+// implementation.
 
 } // namespace lighttex::core

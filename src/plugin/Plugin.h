@@ -7,8 +7,8 @@ namespace lighttex::plugin {
 
 class PluginManager {
 public:
-    PluginManager() = default;
-    // TODO (v0.4): Sol2 + LuaJIT plugin system
+  PluginManager() = default;
+  // TODO (v0.4): Sol2 + LuaJIT plugin system
 };
 
 } // namespace lighttex::plugin

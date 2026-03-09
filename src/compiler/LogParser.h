@@ -6,20 +6,15 @@
 
 namespace lighttex::compiler {
 
-enum class MessageKind {
-    Error,
-    Warning,
-    BadBox,
-    Info
-};
+enum class MessageKind { Error, Warning, BadBox, Info };
 
 struct CompileMessage {
-    MessageKind kind;
-    std::optional<std::string> file;
-    std::optional<int> line;
-    std::string message;
+  MessageKind kind;
+  std::optional<std::string> file;
+  std::optional<int> line;
+  std::string message;
 };
 
-std::vector<CompileMessage> parseLog(const std::string& logContent);
+std::vector<CompileMessage> parseLog(const std::string &logContent);
 
 } // namespace lighttex::compiler

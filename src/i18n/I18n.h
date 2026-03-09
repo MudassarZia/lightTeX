@@ -7,8 +7,8 @@ namespace lighttex::i18n {
 
 class I18n {
 public:
-    I18n() = default;
-    // TODO (v0.3): QTranslator integration
+  I18n() = default;
+  // TODO (v0.3): QTranslator integration
 };
 
 } // namespace lighttex::i18n

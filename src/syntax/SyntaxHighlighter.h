@@ -10,28 +10,28 @@
 namespace lighttex::syntax {
 
 class SyntaxHighlighterBridge : public QSyntaxHighlighter {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    explicit SyntaxHighlighterBridge(QTextDocument* parent = nullptr);
+  explicit SyntaxHighlighterBridge(QTextDocument *parent = nullptr);
 
-    void setTheme(const lighttex::theme::Theme& theme);
-    void scheduleReparse();
+  void setTheme(const lighttex::theme::Theme &theme);
+  void scheduleReparse();
 
 protected:
-    void highlightBlock(const QString& text) override;
+  void highlightBlock(const QString &text) override;
 
 private slots:
-    void doReparse();
+  void doReparse();
 
 private:
-    QTextCharFormat formatForKind(TokenKind kind) const;
+  QTextCharFormat formatForKind(TokenKind kind) const;
 
-    Highlighter highlighter_;
-    std::vector<HighlightEvent> cachedEvents_;
-    QMap<TokenKind, QColor> colorMap_;
-    QTimer reparseTimer_;
-    bool isHighlighting_ = false;
+  Highlighter highlighter_;
+  std::vector<HighlightEvent> cachedEvents_;
+  QMap<TokenKind, QColor> colorMap_;
+  QTimer reparseTimer_;
+  bool isHighlighting_ = false;
 };
 
 } // namespace lighttex::syntax
