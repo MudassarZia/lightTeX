@@ -35,6 +35,15 @@ int main(int argc, char *argv[]) {
   // --- LSP ---
   auto *lspClient = new lighttex::lsp::LspClient(&window);
   auto *completionPopup = new lighttex::lsp::CompletionWidget(window.editor());
+
+  // Snippet expansion takes priority over LSP completion on Tab
+  completionPopup->setSnippetHandler(
+      [&window]() { return window.editor()->tryExpandSnippet(); });
+
+  // After snippet expansion inside {}, trigger LSP argument completion
+  QObject::connect(
+      window.editor(), &lighttex::editor::EditorWidget::snippetExpandedInBraces,
+      completionPopup, &lighttex::lsp::CompletionWidget::startArgumentSession);
   QString currentFileUri;
 
   auto getFileUri = [&state]() -> QString {
@@ -160,8 +169,62 @@ int main(int argc, char *argv[]) {
               completionPopup->startArgumentSession(cursor.position());
             }
           } else {
-            // Argument completion: just insert label
+            // Argument completion: insert label
             cursor.insertText(item.label);
+
+            // Check if this is inside \begin{} — auto-insert \end{}
+            // triggerPos is the position AFTER '{', so -1 to get '{'
+            QTextBlock block = cursor.block();
+            QString lineText = block.text();
+            int braceCol = (triggerPos - 1) - block.position();
+            if (braceCol >= 6) {
+              QString before = lineText.mid(braceCol - 6, 6);
+              if (before == QStringLiteral("\\begin")) {
+                // Check if there's a closing '}' after the inserted label
+                int cursorCol = cursor.positionInBlock();
+                if (cursorCol < lineText.length() &&
+                    lineText[cursorCol] == QLatin1Char('}')) {
+                  // Move past the existing '}'
+                  cursor.movePosition(QTextCursor::Right,
+                                      QTextCursor::MoveAnchor, 1);
+                } else {
+                  // Insert the missing '}'
+                  cursor.insertText(QStringLiteral("}"));
+                }
+
+                // Re-read block/lineText after possible insertion
+                block = cursor.block();
+                lineText = block.text();
+
+                // Check next line for existing \end
+                QTextBlock nextBlock = block.next();
+                bool alreadyHasEnd = false;
+                if (nextBlock.isValid()) {
+                  QString nextTrimmed = nextBlock.text().trimmed();
+                  alreadyHasEnd =
+                      nextTrimmed.startsWith(QStringLiteral("\\end{") +
+                                             item.label + QStringLiteral("}"));
+                }
+
+                if (!alreadyHasEnd) {
+                  QString indent;
+                  for (int i = 0; i < lineText.length(); ++i) {
+                    if (lineText[i] == QLatin1Char(' ') ||
+                        lineText[i] == QLatin1Char('\t'))
+                      indent += lineText[i];
+                    else
+                      break;
+                  }
+                  cursor.insertText(
+                      QStringLiteral("\n") + indent + QStringLiteral("\t") +
+                      QStringLiteral("\n") + indent + QStringLiteral("\\end{") +
+                      item.label + QStringLiteral("}"));
+                  cursor.movePosition(QTextCursor::Up);
+                  cursor.movePosition(QTextCursor::EndOfBlock);
+                }
+              }
+            }
+
             cursor.endEditBlock();
             editor->setTextCursor(cursor);
             editor->setFocus();

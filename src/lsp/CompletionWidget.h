@@ -3,6 +3,7 @@
 #include "lsp/LspTypes.h"
 
 #include <QListWidget>
+#include <functional>
 
 class QPlainTextEdit;
 
@@ -19,6 +20,9 @@ public:
   void showCompletions(const std::vector<CompletionItem> &items);
   void hideCompletions();
   void startArgumentSession(int triggerPos);
+  void setSnippetHandler(std::function<bool()> handler) {
+    snippetHandler_ = std::move(handler);
+  }
   [[nodiscard]] int triggerPos() const { return triggerPos_; }
   [[nodiscard]] TriggerKind triggerKind() const { return triggerKind_; }
 
@@ -31,6 +35,9 @@ signals:
 protected:
   bool eventFilter(QObject *obj, QEvent *event) override;
 
+private slots:
+  void checkCursorContext();
+
 private:
   void positionPopup();
 
@@ -38,6 +45,7 @@ private:
   std::vector<CompletionItem> items_;
   int triggerPos_ = -1;
   TriggerKind triggerKind_ = TriggerKind::Command;
+  std::function<bool()> snippetHandler_;
 };
 
 } // namespace lighttex::lsp

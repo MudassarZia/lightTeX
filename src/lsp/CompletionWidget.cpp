@@ -36,6 +36,8 @@ CompletionWidget::CompletionWidget(QPlainTextEdit *editor)
     if (auto *topLevel = editor_->window()) {
       topLevel->installEventFilter(this);
     }
+    connect(editor_, &QPlainTextEdit::cursorPositionChanged, this,
+            &CompletionWidget::checkCursorContext);
   }
 }
 
@@ -175,9 +177,16 @@ bool CompletionWidget::eventFilter(QObject *obj, QEvent *event) {
         hideCompletions();
         return true;
 
+      case Qt::Key_Tab:
+        // Try snippet expansion first — snippets take priority over
+        // LSP completion when the user presses Tab
+        if (snippetHandler_ && snippetHandler_()) {
+          hideCompletions();
+          return true;
+        }
+        [[fallthrough]];
       case Qt::Key_Return:
-      case Qt::Key_Enter:
-      case Qt::Key_Tab: {
+      case Qt::Key_Enter: {
         int row = currentRow();
         if (row >= 0 && row < static_cast<int>(items_.size())) {
           CompletionItem item = items_[static_cast<size_t>(row)];
@@ -268,6 +277,35 @@ bool CompletionWidget::eventFilter(QObject *obj, QEvent *event) {
   }
 
   return QListWidget::eventFilter(obj, event);
+}
+
+void CompletionWidget::checkCursorContext() {
+  if (!editor_ || isVisible())
+    return;
+
+  int pos = editor_->textCursor().position();
+  auto *doc = editor_->document();
+
+  // Check: cursor is between '{' and '}'
+  if (pos <= 0)
+    return;
+  QChar before = doc->characterAt(pos - 1);
+  QChar after = doc->characterAt(pos);
+  if (before != QLatin1Char('{') || after != QLatin1Char('}'))
+    return;
+
+  // Check: '{' is preceded by a command (\alphas)
+  int bracePos = pos - 1;
+  int scan = bracePos - 1;
+  while (scan >= 0 && doc->characterAt(scan).isLetter())
+    --scan;
+  if (scan < 0 || doc->characterAt(scan) != QLatin1Char('\\'))
+    return;
+
+  // Trigger argument completion
+  triggerKind_ = TriggerKind::Argument;
+  triggerPos_ = pos; // position after '{'
+  emit completionRequested();
 }
 
 } // namespace lighttex::lsp
