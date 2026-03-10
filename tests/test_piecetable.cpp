@@ -50,11 +50,11 @@ TEST(PieceTable, ReplaceRange) {
 TEST(PieceTable, CharToLineCol) {
   PieceTable pt("Hello\nWorld\nFoo");
   // H=0, e=1, l=2, l=3, o=4, \n=5, W=6
-  EXPECT_EQ(pt.charToLineCol(0), std::make_pair(0u, 0u));
-  EXPECT_EQ(pt.charToLineCol(5), std::make_pair(0u, 5u));
-  EXPECT_EQ(pt.charToLineCol(6), std::make_pair(1u, 0u));
-  EXPECT_EQ(pt.charToLineCol(11), std::make_pair(1u, 5u));
-  EXPECT_EQ(pt.charToLineCol(12), std::make_pair(2u, 0u));
+  EXPECT_EQ(pt.charToLineCol(0), std::make_pair(size_t{0}, size_t{0}));
+  EXPECT_EQ(pt.charToLineCol(5), std::make_pair(size_t{0}, size_t{5}));
+  EXPECT_EQ(pt.charToLineCol(6), std::make_pair(size_t{1}, size_t{0}));
+  EXPECT_EQ(pt.charToLineCol(11), std::make_pair(size_t{1}, size_t{5}));
+  EXPECT_EQ(pt.charToLineCol(12), std::make_pair(size_t{2}, size_t{0}));
 }
 
 TEST(PieceTable, LineColToChar) {
