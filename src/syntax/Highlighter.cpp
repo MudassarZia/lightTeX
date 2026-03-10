@@ -161,13 +161,16 @@ Highlighter::walkTree(TSTree *tree, const std::string & /*source*/) {
   std::vector<std::pair<size_t, size_t>> parentRanges;
 
   while (!stack.empty()) {
-    auto &[node, visited] = stack.back();
+    // Copy node before any stack mutations — push_back/pop_back can
+    // reallocate or invalidate the reference from stack.back()
+    TSNode currentNode = stack.back().node;
+    bool wasVisited = stack.back().visited;
 
-    if (visited) {
+    if (wasVisited) {
       stack.pop_back();
       if (!parentRanges.empty()) {
-        size_t startByte = ts_node_start_byte(node);
-        size_t endByte = ts_node_end_byte(node);
+        size_t startByte = ts_node_start_byte(currentNode);
+        size_t endByte = ts_node_end_byte(currentNode);
         if (parentRanges.back().first == startByte &&
             parentRanges.back().second == endByte) {
           parentRanges.pop_back();
@@ -176,15 +179,15 @@ Highlighter::walkTree(TSTree *tree, const std::string & /*source*/) {
       continue;
     }
 
-    visited = true;
+    stack.back().visited = true;
 
-    const char *type = ts_node_type(node);
-    bool isNamed = ts_node_is_named(node);
-    uint32_t childCount = ts_node_child_count(node);
+    const char *type = ts_node_type(currentNode);
+    bool isNamed = ts_node_is_named(currentNode);
+    uint32_t childCount = ts_node_child_count(currentNode);
 
     // Check if this node is inside a parent range we already classified
-    size_t startByte = ts_node_start_byte(node);
-    size_t endByte = ts_node_end_byte(node);
+    size_t startByte = ts_node_start_byte(currentNode);
+    size_t endByte = ts_node_end_byte(currentNode);
 
     bool insideParent = false;
     for (const auto &[ps, pe] : parentRanges) {
@@ -197,8 +200,8 @@ Highlighter::walkTree(TSTree *tree, const std::string & /*source*/) {
     if (!insideParent) {
       auto kind = classifyNode(type, isNamed, childCount > 0);
       if (kind) {
-        TSPoint startPt = ts_node_start_point(node);
-        TSPoint endPt = ts_node_end_point(node);
+        TSPoint startPt = ts_node_start_point(currentNode);
+        TSPoint endPt = ts_node_end_point(currentNode);
 
         events.push_back({startByte, endByte, startPt.row, startPt.column,
                           endPt.row, endPt.column, *kind});
@@ -210,7 +213,7 @@ Highlighter::walkTree(TSTree *tree, const std::string & /*source*/) {
 
     // Push children in reverse order for DFS
     for (int i = static_cast<int>(childCount) - 1; i >= 0; --i) {
-      TSNode child = ts_node_child(node, static_cast<uint32_t>(i));
+      TSNode child = ts_node_child(currentNode, static_cast<uint32_t>(i));
       stack.push_back({child, false});
     }
   }
