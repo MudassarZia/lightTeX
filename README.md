@@ -2,7 +2,7 @@
 
 A fast, keyboard-first LaTeX editor built with C++ and Qt 6. Starts in milliseconds, compiles in the background, and stays out of your way.
 
-**Status:** v0.2.0-beta (configurable keybindings, find/replace, file tree, snippets, LSP autocomplete, auto-compile)
+**Status:** v0.2.1-beta (snippet tab-expansion, LSP autocomplete, find/replace, file tree, auto-compile)
 
 ## Why lightTex?
 
@@ -27,12 +27,12 @@ A fast, keyboard-first LaTeX editor built with C++ and Qt 6. Starts in milliseco
 - **Command palette**: Ctrl+Shift+P with fuzzy subsequence matching
 - **Error panel**: Click-to-jump to error line in editor
 - **Auto-compile**: Toggle via command palette, compiles on save
-- **LaTeX snippets**: 18 built-in snippets with tabstop support (`\begin`, `\frac`, `\fig`, etc.)
-- **texlab LSP**: Autocomplete (commands + arguments), hover, go-to-definition, diagnostics (requires texlab on PATH)
+- **LaTeX snippets**: 18 built-in snippets — type `\frac`, `\begin`, etc. and press Tab to expand, then Tab/Shift+Tab through placeholders
+- **texlab LSP**: Autocomplete (commands + arguments), hover, go-to-definition, diagnostics (requires texlab on PATH). LSP argument completion auto-triggers after snippet expansion and when cursor enters empty `{}` after a command
 - **Themes**: Dark + Light TOML themes
 - **Status bar**: Cursor position, compile status, engine, auto-compile indicator, LSP status
 - **Undo/redo**: Full history with transaction support
-- **174 tests** across 20 test suites, all passing
+- **201 tests** across 22 test suites, all passing
 
 ## Quick start
 
@@ -137,7 +137,7 @@ lightTex/
 │   └── {vim,plugin,i18n}/         # Stubs for future versions
 ├── themes/                        # dark.toml, light.toml
 ├── snippets/                      # latex.toml (18 default snippets)
-├── tests/                         # 150 tests (Google Test + QTest)
+├── tests/                         # 201 tests (Google Test + QTest)
 ├── benchmarks/                    # Google Benchmark for piece table
 └── .github/workflows/             # CI + Release pipelines
 ```
@@ -161,17 +161,19 @@ lightTex/
 | Ctrl+H | Find and replace |
 | Ctrl+B | Toggle file tree sidebar |
 | F12 | Go to definition (LSP) |
+| Tab | Expand snippet / next tabstop |
+| Shift+Tab | Previous tabstop |
 | Ctrl+Z / Ctrl+Y | Undo / Redo |
 
 All shortcuts are configurable via `keybindings.toml` (see `%APPDATA%/lighttex/keybindings.toml` on Windows, `~/.config/lighttex/keybindings.toml` on Linux/Mac).
 
 ## Test suite
 
-174 tests covering all modules:
+201 tests covering all modules:
 
 | Test file | Tests | Module |
 |---|---|---|
-| test_piecetable | 18 | Piece table insert/delete/replace/lines/unicode |
+| test_piecetable | 17 | Piece table insert/delete/replace/lines/unicode |
 | test_selection | 7 | Cursor, range, contains, overlaps, normalize, clip |
 | test_history | 5 | Undo/redo stacks, clear |
 | test_document | 5 | File I/O, line ending detection, save roundtrip |
@@ -187,10 +189,35 @@ All shortcuts are configurable via `keybindings.toml` (see `%APPDATA%/lighttex/k
 | test_compilepanel | 4 | Messages, click-to-jump signal, show/hide |
 | test_findreplace | 10 | Search highlights, bracket matcher, theme |
 | test_filetree | 5 | Root path, theme, signal, header hidden |
-| test_snippets | 15 | Snippet manager, expansion, tabstop session |
-| test_jsonrpc | 5 | Encode/decode, Content-Length framing, partial data |
-| test_lsptypes | 5 | Position, Range, CompletionItem, Hover, Diagnostic |
+| test_snippets | 13 | Snippet manager, expansion, tabstop session |
+| test_jsonrpc | 6 | Encode/decode, Content-Length framing, partial data |
+| test_lsptypes | 9 | Position, Range, CompletionItem, Hover, Diagnostic |
 | test_completionwidget | 24 | LSP completion popup, triggers, signals, fromJson |
+| test_autoindent | 12 | Auto-indentation, `\begin`/`\end` auto-pairing, undo |
+| test_snippet_expansion | 15 | Tab-to-expand, tabstop cycling, cancel, undo, LSP signal |
+
+## Benchmarks
+
+Piece table performance (Google Benchmark, Release build, 12-core 3.7 GHz):
+
+| Benchmark | 100 ops | 1,000 ops | 10,000 ops |
+|---|---|---|---|
+| Insert at end | 5.9 us | — | 35.9 ms |
+| Insert at beginning | 3.1 us | — | 18.5 ms |
+| Insert at random | 6.1 us | — | 40.8 ms |
+| Delete + insert | 76.6 us | 906 us | 18.3 ms |
+
+| Benchmark | 100 lines | 1,000 lines | 10,000 lines |
+|---|---|---|---|
+| Full text extraction | 0.46 us | — | 42.0 us |
+| Char-to-line/col lookup | — | 8.75 ns | — |
+
+```bash
+cmake -B build -DLIGHTTEX_BUILD_BENCHMARKS=ON
+cmake --build build --config Release
+./build/benchmarks/Release/bench_piecetable    # Windows
+./build/benchmarks/bench_piecetable             # Linux/macOS
+```
 
 ## Roadmap
 
